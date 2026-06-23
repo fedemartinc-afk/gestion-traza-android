@@ -1,0 +1,43 @@
+<resources>
+    <style name="Theme.GestionTraza" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/verde_oscuro</item>
+        <item name="colorPrimaryVariant">@color/verde_medio</item>
+        <item name="colorOnPrimary">@color/blanco</item>
+        <item name="colorSecondary">@color/amarillo</item>
+        <item name="colorOnSecondary">#1a1a18</item>
+        <item name="android:statusBarColor">@color/verde_oscuro</item>
+        <item name="android:navigationBarColor">@color/verde_oscuro</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="BtnPrimary" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/verde_oscuro</item>
+        <item name="android:textColor">@color/blanco</item>
+        <item name="android:textSize">14sp</item>
+        <item name="cornerRadius">10dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+
+    <style name="BtnSecondary" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/verde_oscuro</item>
+        <item name="android:textColor">@color/verde_oscuro</item>
+        <item name="cornerRadius">10dp</item>
+    </style>
+
+    <style name="BtnDanger" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/rojo_error</item>
+        <item name="android:textColor">@color/rojo_error</item>
+        <item name="cornerRadius">10dp</item>
+    </style>
+
+    <style name="BtnGray" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">#757575</item>
+        <item name="android:textColor">@color/blanco</item>
+        <item name="android:textSize">14sp</item>
+        <item name="cornerRadius">10dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+</resources>

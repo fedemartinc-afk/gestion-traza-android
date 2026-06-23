@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/configFragment">
+
+    <fragment
+        android:id="@+id/configFragment"
+        android:name="com.gestiontraza.app.ui.config.ConfigFragment"
+        android:label="Config">
+        <action
+            android:id="@+id/action_config_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/configFragment"
+            app:popUpToInclusive="true"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.gestiontraza.app.ui.home.HomeFragment"
+        android:label="Inicio">
+        <action
+            android:id="@+id/action_home_to_reading"
+            app:destination="@id/readingFragment"/>
+        <action
+            android:id="@+id/action_home_to_config"
+            app:destination="@id/configFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/readingFragment"
+        android:name="com.gestiontraza.app.ui.reading.ReadingFragment"
+        android:label="Lectura">
+        <action
+            android:id="@+id/action_reading_to_send"
+            app:destination="@id/sendFragment"/>
+        <action
+            android:id="@+id/action_reading_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/sendFragment"
+        android:name="com.gestiontraza.app.ui.send.SendFragment"
+        android:label="Enviar">
+        <argument
+            android:name="caravanas"
+            app:argType="string"/>
+        <action
+            android:id="@+id/action_send_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true"/>
+    </fragment>
+
+</navigation>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- G ring arc (contorno cabeza de vaca / letra G) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 72 18.9 A 36 36 0 1 0 72 74.7 L 62.1 63 A 20.7 20.7 0 1 1 62.1 30.6 Z"/>
+
+    <!-- G crossbar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 65.7 40.5 H 76.5 A 3.6 3.6 0 0 1 80.1 44.1 V 49.5 A 3.6 3.6 0 0 1 76.5 53.1 H 65.7 A 3.6 3.6 0 0 1 62.1 49.5 V 44.1 A 3.6 3.6 0 0 1 65.7 40.5 Z"/>
+
+    <!-- T crossbar (dentro del counter de la G) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 36 38.7 H 61.2 A 2.7 2.7 0 0 1 63.9 41.4 V 43.2 A 2.7 2.7 0 0 1 61.2 45.9 H 36 A 2.7 2.7 0 0 1 33.3 43.2 V 41.4 A 2.7 2.7 0 0 1 36 38.7 Z"/>
+
+    <!-- T stem -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 45 45.9 H 46.8 A 2.7 2.7 0 0 1 49.5 48.6 V 60.3 A 2.7 2.7 0 0 1 46.8 63 H 45 A 2.7 2.7 0 0 1 42.3 60.3 V 48.6 A 2.7 2.7 0 0 1 45 45.9 Z"/>
+
+    <!-- Hocico de vaca (se une en la base del anillo de la G) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 28.8 92.7 A 19.8 9.9 0 1 0 68.4 92.7 A 19.8 9.9 0 1 0 28.8 92.7 Z"/>
+
+    <!-- Orificio nasal izquierdo -->
+    <path
+        android:fillColor="@color/verde_oscuro"
+        android:pathData="M 34.2 93.6 A 6.3 5.4 0 1 0 46.8 93.6 A 6.3 5.4 0 1 0 34.2 93.6 Z"/>
+
+    <!-- Orificio nasal derecho -->
+    <path
+        android:fillColor="@color/verde_oscuro"
+        android:pathData="M 50.4 93.6 A 6.3 5.4 0 1 0 63 93.6 A 6.3 5.4 0 1 0 50.4 93.6 Z"/>
+
+</vector>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/verde_oscuro">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GESTION TRAZA"
+            android:textColor="@color/blanco"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"
+            android:layout_marginTop="32dp"/>
+
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:src="@drawable/ic_logo"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="4dp"
+            android:scaleType="fitCenter"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Iniciá sesión escaneando el QR de la web"
+            android:textColor="#99ffffff"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="36dp"/>
+
+        <!-- QR: acción principal -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEscanearQR"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:text="📷   Escanear QR de la web"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            style="@style/BtnGray"
+            app:cornerRadius="14dp"
+            android:layout_marginBottom="24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="— o ingresá el token manualmente —"
+            android:textColor="#66ffffff"
+            android:textSize="11sp"
+            android:layout_marginBottom="16dp"/>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Token de sesión"
+                    android:textSize="11sp"
+                    android:textColor="@color/gris_texto"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.08"
+                    android:layout_marginBottom="6dp"/>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    app:endIconMode="clear_text"
+                    android:layout_marginBottom="8dp">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etToken"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Token generado en la web"
+                        android:inputType="textVisiblePassword"
+                        android:fontFamily="monospace"
+                        android:textSize="13sp"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="El QR y el token los encontrás en tu Perfil de la web."
+                    android:textSize="11sp"
+                    android:textColor="@color/gris_texto"
+                    android:layout_marginBottom="20dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnConectar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Conectar"
+                    style="@style/BtnPrimary"/>
+
+                <TextView
+                    android:id="@+id/tvEstado"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="12sp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"/>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Sección solo visible para administradores -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardAdmin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            android:layout_marginTop="16dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Servidor SENASA"
+                    android:textSize="11sp"
+                    android:textColor="@color/gris_texto"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.08"
+                    android:layout_marginBottom="12dp"/>
+
+                <RadioGroup
+                    android:id="@+id/rgSenasaEnv"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <RadioButton
+                        android:id="@+id/rbReplica"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Réplica (pruebas) — rep.senasa.gov.ar"
+                        android:textSize="13sp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"/>
+
+                    <RadioButton
+                        android:id="@+id/rbProduccionGov"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Producción — aps2.senasa.gov.ar"
+                        android:textSize="13sp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"/>
+
+                    <RadioButton
+                        android:id="@+id/rbProduccionGob"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Producción — aps2.senasa.gob.ar"
+                        android:textSize="13sp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"/>
+
+                </RadioGroup>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <View android:layout_width="0dp" android:layout_height="32dp"/>
+
+    </LinearLayout>
+</ScrollView>

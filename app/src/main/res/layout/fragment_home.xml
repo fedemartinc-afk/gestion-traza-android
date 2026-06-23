@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/fondo">
+
+    <!-- Toolbar -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/verde_oscuro"
+        android:padding="14dp"
+        android:minHeight="56dp">
+
+        <LinearLayout
+            android:id="@+id/toolbarLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GESTION TRAZA"
+                android:textColor="@color/blanco"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.04"/>
+
+            <TextView
+                android:id="@+id/tvSesionNombre"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sesión: —"
+                android:textColor="#99ffffff"
+                android:textSize="11sp"
+                android:layout_marginTop="1dp"/>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:src="@drawable/ic_logo"
+            android:layout_centerInParent="true"
+            android:scaleType="fitCenter"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnConfig"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Config"
+            android:textSize="11sp"
+            app:strokeColor="@color/blanco"
+            android:textColor="@color/blanco"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:cornerRadius="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"/>
+
+    </RelativeLayout>
+
+    <!-- Estado Bluetooth -->
+    <LinearLayout
+        android:id="@+id/panelBt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="@color/blanco"
+        android:gravity="center_vertical">
+
+        <View
+            android:id="@+id/dotBt"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:background="@drawable/circle_gray"
+            android:layout_marginEnd="8dp"/>
+
+        <TextView
+            android:id="@+id/tvBtEstado"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Bluetooth — sin lector conectado"
+            android:textSize="12sp"
+            android:textColor="@color/gris_texto"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBtConectar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lector BT"
+            android:textSize="11sp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/verde_oscuro"
+            android:textColor="@color/verde_oscuro"
+            app:cornerRadius="8dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"/>
+    </LinearLayout>
+
+    <!-- Contenido central -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLeerCaravanas"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:text="LEER CARAVANAS"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            style="@style/BtnPrimary"/>
+
+        <!-- Enviar pendientes (visible solo cuando hay items en cola) -->
+        <FrameLayout
+            android:id="@+id/framePendientes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEnviarPendientes"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Enviar pendientes"
+                android:textSize="14sp"
+                style="@style/BtnSecondary"/>
+
+            <TextView
+                android:id="@+id/tvBadgePendientes"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="6dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/badge_red"
+                android:textColor="@color/blanco"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:text="0"/>
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Conectá el lector RFID vía Bluetooth y presioná el botón"
+            android:textSize="12sp"
+            android:textColor="@color/gris_texto"
+            android:gravity="center"
+            android:layout_marginTop="16dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>

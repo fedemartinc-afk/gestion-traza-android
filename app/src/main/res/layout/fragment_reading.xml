@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/fondo">
+
+    <!-- Topbar con contador y botón finalizar -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/verde_oscuro"
+        android:padding="14dp"
+        android:minHeight="56dp">
+
+        <LinearLayout
+            android:id="@+id/toolbarLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lectura activa"
+                android:textColor="@color/blanco"
+                android:textSize="13sp"/>
+
+            <TextView
+                android:id="@+id/tvContador"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Leídas: 0"
+                android:textColor="@color/blanco"
+                android:textSize="22sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:src="@drawable/ic_logo"
+            android:layout_centerInParent="true"
+            android:scaleType="fitCenter"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFinalizar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Finalizar lectura"
+            android:backgroundTint="@color/amarillo"
+            android:textColor="#1a1a18"
+            android:textSize="13sp"
+            app:cornerRadius="10dp"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"/>
+
+    </RelativeLayout>
+
+    <!-- Campo oculto que recibe input del lector HID (actúa como teclado BT) -->
+    <EditText
+        android:id="@+id/etHidInput"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:inputType="text"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:alpha="0"/>
+
+    <!-- Lista de caravanas -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Caravanas leídas"
+        android:textSize="11sp"
+        android:textColor="@color/gris_texto"
+        android:textAllCaps="true"
+        android:letterSpacing="0.06"
+        android:padding="12dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerCaravanas"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp"
+        android:clipToPadding="false"/>
+
+    <!-- Entrada manual de caravana -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:gravity="center_vertical"
+        android:background="@color/blanco">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginEnd="8dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etManual"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Ingresar código manualmente"
+                android:fontFamily="monospace"
+                android:textSize="13sp"
+                android:inputType="textCapCharacters"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAgregar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Agregar"
+            style="@style/BtnPrimary"
+            app:cornerRadius="8dp"/>
+    </LinearLayout>
+
+    <!-- Info lector HID -->
+    <TextView
+        android:id="@+id/tvHidInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Modo HID activo — el lector escribe directo en la app"
+        android:textSize="11sp"
+        android:textColor="@color/gris_texto"
+        android:gravity="center"
+        android:padding="6dp"
+        android:background="@color/blanco"/>
+
+</LinearLayout>

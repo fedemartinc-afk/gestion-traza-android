@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Topbar -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/verde_oscuro"
+            android:padding="14dp"
+            android:minHeight="56dp">
+
+            <LinearLayout
+                android:id="@+id/toolbarLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lectura finalizada"
+                    android:textColor="@color/blanco"
+                    android:textSize="13sp"/>
+
+                <TextView
+                    android:id="@+id/tvResumen"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0 caravanas válidas"
+                    android:textColor="@color/blanco"
+                    android:textSize="20sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:src="@drawable/ic_logo"
+                android:layout_centerInParent="true"
+                android:scaleType="fitCenter"/>
+
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Número de DTe — primero -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                android:layout_marginBottom="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Número de DTe"
+                        android:textSize="11sp"
+                        android:textColor="@color/gris_texto"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.08"
+                        android:layout_marginBottom="8dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_marginEnd="8dp">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etDte"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Ej: 032030063-0 (opcional)"
+                                android:inputType="textNoSuggestions"
+                                android:fontFamily="monospace"
+                                android:textSize="15sp"
+                                android:textAllCaps="false"/>
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnEscanearDte"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="📷"
+                            android:textSize="15sp"
+                            style="@style/BtnSecondary"
+                            app:cornerRadius="8dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"/>
+                    </LinearLayout>
+
+                    <!-- Filas de DTe adicionales -->
+                    <LinearLayout
+                        android:id="@+id/llExtraDtes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"/>
+
+                    <!-- Botón agregar DTe -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAgregarDte"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+ Agregar otro DTe"
+                        android:textSize="12sp"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:textColor="@color/verde_oscuro"
+                        android:layout_marginTop="4dp"/>
+
+                    <!-- Nota múltiple DTe (visible solo cuando hay más de uno) -->
+                    <TextView
+                        android:id="@+id/tvMultipleDteNota"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Con múltiples DTe solo está disponible Enviar a usuario web"
+                        android:textSize="11sp"
+                        android:textColor="@color/gris_texto"
+                        android:gravity="center"
+                        android:layout_marginTop="6dp"
+                        android:visibility="gone"/>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Botón enviar a usuario web -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEnviarWeb"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Enviar a usuario web"
+                android:textSize="15sp"
+                style="@style/BtnPrimary"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"/>
+
+            <!-- Botón enviar para cierre SENASA -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEnviarCierre"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Enviar para cierre SENASA"
+                android:textSize="15sp"
+                style="@style/BtnDanger"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cierre: usa DTe, GPS actual y todas las caravanas. Requiere credenciales SENASA."
+                android:textSize="11sp"
+                android:textColor="@color/gris_texto"
+                android:gravity="center"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Progreso -->
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/tvResultado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="13sp"
+                android:gravity="center"
+                android:padding="12dp"
+                android:visibility="gone"/>
+
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

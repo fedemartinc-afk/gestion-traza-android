@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="verde_oscuro">#003d2b</color>
+    <color name="verde_medio">#00875a</color>
+    <color name="verde_ok">#2e7d32</color>
+    <color name="verde_ok_bg">#e8f5e9</color>
+    <color name="rojo_error">#c62828</color>
+    <color name="rojo_error_bg">#ffebee</color>
+    <color name="amarillo">#f5a623</color>
+    <color name="blanco">#ffffff</color>
+    <color name="fondo">#f0ede8</color>
+    <color name="gris_linea">#ddd8ce</color>
+    <color name="gris_texto">#6b6560</color>
+</resources>
