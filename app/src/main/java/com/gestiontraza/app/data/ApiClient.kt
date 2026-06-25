@@ -39,6 +39,36 @@ object ApiClient {
         }
     }
 
+    fun enviarNuevaTRI(
+        baseUrl: String,
+        token: String,
+        nota: String,
+        caravanas: List<String>
+    ): Result {
+        return try {
+            val body = JSONObject().apply {
+                put("tipo", "tri")
+                put("nota", nota)
+                put("caravanas", JSONArray(caravanas))
+            }
+            val req = Request.Builder()
+                .url("$baseUrl/api/android/enviar")
+                .addHeader("Authorization", "Bearer $token")
+                .post(body.toString().toRequestBody(JSON))
+                .build()
+            val resp = client.newCall(req).execute()
+            val respBody = resp.body?.string() ?: ""
+            if (resp.isSuccessful) {
+                Result(true, "Enviadas para nueva TRI")
+            } else {
+                val json = runCatching { JSONObject(respBody) }.getOrNull()
+                Result(false, json?.optString("error") ?: "Error ${resp.code}")
+            }
+        } catch (e: Exception) {
+            Result(false, "Sin conexión: ${e.message}")
+        }
+    }
+
     fun enviarCaravanas(
         baseUrl: String,
         token: String,

@@ -109,6 +109,16 @@ class SendFragment : Fragment() {
                 .setNegativeButton("Cancelar", null)
                 .show()
         }
+
+        binding.btnEnviarTri.setOnClickListener {
+            val nota = binding.etNotaTri.text?.toString()?.trim() ?: ""
+            AlertDialog.Builder(requireContext())
+                .setTitle("Enviar para nueva TRI")
+                .setMessage("Se enviarán ${caravanas.size} caravanas${if (nota.isNotEmpty()) " (\"$nota\")" else ""} a la bandeja de Recibidas.\n\n¿Confirmás?")
+                .setPositiveButton("Sí, enviar") { _, _ -> doEnviarTRI(nota) }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
     }
 
     private fun addExtraDteRow() {
@@ -200,6 +210,44 @@ class SendFragment : Fragment() {
         }
     }
 
+    private fun doEnviarTRI(nota: String) {
+        if (!isOnline()) {
+            showPending("Sin conexión — ${caravanas.size} caravanas no enviadas (TRI requiere conexión)")
+            return
+        }
+        setLoading(true)
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                ApiClient.enviarNuevaTRI(
+                    baseUrl   = session.baseUrl(),
+                    token     = session.token,
+                    nota      = nota,
+                    caravanas = caravanas
+                )
+            }
+            setLoading(false)
+            if (result.ok) {
+                showSuccessTRI(result.message, nota)
+            } else {
+                showError(result.message)
+            }
+        }
+    }
+
+    private fun showSuccessTRI(msg: String, nota: String) {
+        binding.tvResultado.visibility = View.VISIBLE
+        val extra = if (nota.isNotEmpty()) " · \"$nota\"" else ""
+        binding.tvResultado.text = "✓ $msg${extra}\n${caravanas.size} caravanas"
+        binding.tvResultado.setTextColor(resources.getColor(R.color.verde_ok, null))
+        binding.tvResultado.setBackgroundColor(resources.getColor(R.color.verde_ok_bg, null))
+        binding.btnEnviarWeb.isEnabled    = false
+        binding.btnEnviarCierre.isEnabled = false
+        binding.btnEnviarTri.isEnabled    = false
+        binding.root.postDelayed({
+            if (isAdded) findNavController().navigate(R.id.action_send_to_home)
+        }, 3000)
+    }
+
     private fun showSuccess(msg: String, dtesStr: String) {
         binding.tvResultado.visibility = View.VISIBLE
         binding.tvResultado.text = "✓ $msg\nDTe: $dtesStr · ${caravanas.size} caravanas"
@@ -232,9 +280,10 @@ class SendFragment : Fragment() {
     }
 
     private fun setLoading(loading: Boolean) {
-        binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
-        binding.btnEnviarWeb.isEnabled = !loading
+        binding.progressBar.visibility    = if (loading) View.VISIBLE else View.GONE
+        binding.btnEnviarWeb.isEnabled    = !loading
         binding.btnEnviarCierre.isEnabled = !loading
+        binding.btnEnviarTri.isEnabled    = !loading
         if (loading) binding.tvResultado.visibility = View.GONE
     }
 

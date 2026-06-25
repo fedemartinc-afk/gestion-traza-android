@@ -181,6 +181,66 @@
                 android:gravity="center"
                 android:layout_marginBottom="16dp"/>
 
+            <!-- Separador -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/gris_linea"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Card nota Nueva TRI -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                android:layout_marginBottom="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nueva TRI"
+                        android:textSize="11sp"
+                        android:textColor="@color/gris_texto"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.08"
+                        android:layout_marginBottom="8dp"/>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        app:counterEnabled="true"
+                        app:counterMaxLength="30">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etNotaTri"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Nota (opcional, máx. 30 caracteres)"
+                            android:inputType="text"
+                            android:maxLength="30"
+                            android:textSize="14sp"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Botón Enviar para nueva TRI -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEnviarTri"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Enviar para nueva TRI"
+                android:textSize="15sp"
+                style="@style/BtnSecondary"
+                android:layout_marginBottom="8dp"/>
+
             <!-- Progreso -->
             <ProgressBar
                 android:id="@+id/progressBar"
