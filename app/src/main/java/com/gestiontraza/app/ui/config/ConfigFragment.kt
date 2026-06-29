@@ -29,13 +29,16 @@ class ConfigFragment : Fragment() {
         val raw = BarcodeScanActivity.getResultCode(result) ?: return@registerForActivityResult
         try {
             val json = JSONObject(raw)
+            // Leer 'url' (formato nuevo) o 'server' (compatibilidad hacia atrás)
+            val url       = json.optString("url",       "").trim()
             val server    = json.optString("server",    "").trim()
             val token     = json.optString("token",     "").trim()
             val senasaEnv = json.optString("senasaEnv", "").trim()
             val session = SessionManager(requireContext())
-            if (server.isNotEmpty())    session.serverUrl  = server
-            if (token.isNotEmpty())     binding.etToken.setText(token)
-            if (senasaEnv.isNotEmpty()) session.senasaEnv  = senasaEnv
+            val serverValue = url.ifEmpty { server }
+            if (serverValue.isNotEmpty()) session.serverUrl  = serverValue
+            if (token.isNotEmpty())       binding.etToken.setText(token)
+            if (senasaEnv.isNotEmpty())   session.senasaEnv  = senasaEnv
             setEstado("QR leído — presioná Conectar", null)
         } catch (e: Exception) {
             setEstado("QR inválido: no se pudo leer el contenido", false)
@@ -53,11 +56,6 @@ class ConfigFragment : Fragment() {
 
         // Pre-llenar token si ya hay sesión guardada
         if (session.token.isNotBlank()) binding.etToken.setText(session.token)
-
-        // Mostrar panel admin si ya está identificado como admin
-        if (session.isAdmin) {
-            mostrarPanelAdmin(session)
-        }
 
         binding.btnEscanearQR.setOnClickListener {
             qrLauncher.launch(BarcodeScanActivity.newIntent(requireContext()))
@@ -93,31 +91,23 @@ class ConfigFragment : Fragment() {
                     session.wsUsername   = result.data.optString("wsUsername", "")
                     session.wsToken      = result.data.optString("wsToken", "")
                     session.isAdmin      = result.data.optBoolean("esAdmin", false)
-                    // El servidor define el ambiente SENASA; el admin puede sobreescribir localmente
                     val envServer = result.data.optString("senasaEnv", "")
                     if (envServer.isNotEmpty()) session.senasaEnv = envServer
-                    if (session.isAdmin) mostrarPanelAdmin(session)
-                    findNavController().navigate(R.id.action_config_to_home)
+
+                    // Guardar tipos de sesión permitidos
+                    val tiposArr = result.data.optJSONArray("tiposSesion")
+                    val tipos = mutableListOf<String>()
+                    if (tiposArr != null) {
+                        for (i in 0 until tiposArr.length()) tipos.add(tiposArr.getString(i))
+                    }
+                    if (tipos.isEmpty()) tipos.add("consignatario") // fallback para APIs viejas
+                    session.tiposSesionPermitidos = tipos
+
+                    // Siempre mostrar selector de perfil
+                    findNavController().navigate(R.id.action_config_to_tipoSesion)
                 } else {
                     setEstado("Error: ${result.message}", false)
                 }
-            }
-        }
-    }
-
-    private fun mostrarPanelAdmin(session: SessionManager) {
-        binding.cardAdmin.visibility = View.VISIBLE
-        // Seleccionar el radio button según la preferencia guardada
-        when (session.senasaEnv) {
-            "produccion_gov" -> binding.rgSenasaEnv.check(R.id.rbProduccionGov)
-            "produccion_gob" -> binding.rgSenasaEnv.check(R.id.rbProduccionGob)
-            else             -> binding.rgSenasaEnv.check(R.id.rbReplica)
-        }
-        binding.rgSenasaEnv.setOnCheckedChangeListener { _, checkedId ->
-            session.senasaEnv = when (checkedId) {
-                R.id.rbProduccionGov -> "produccion_gov"
-                R.id.rbProduccionGob -> "produccion_gob"
-                else                 -> "replica"
             }
         }
     }

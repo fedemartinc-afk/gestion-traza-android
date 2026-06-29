@@ -54,7 +54,24 @@ class HomeFragment : Fragment() {
         btAdapter = btMgr?.adapter
         btManager = BtManager(btAdapter)
 
-        binding.tvSesionNombre.text = "Sesión: ${session.sesionNombre.ifBlank { session.usuarioNombre }}"
+        val tipoLabel = when (session.tipoSesionActual) {
+            "productor"     -> "Productor"
+            "consignatario" -> "Consignatario"
+            else            -> ""
+        }
+        val sesionBase = session.sesionNombre.ifBlank { session.usuarioNombre }
+        binding.tvSesionNombre.text = if (tipoLabel.isNotEmpty()) "$sesionBase · $tipoLabel" else sesionBase
+
+        // Mostrar panel según tipo de sesión activo
+        if (session.tipoSesionActual == "productor") {
+            binding.panelConsignatario.visibility = View.GONE
+            binding.panelBt.visibility            = View.GONE
+            binding.panelProductor.visibility     = View.VISIBLE
+        } else {
+            binding.panelConsignatario.visibility = View.VISIBLE
+            binding.panelBt.visibility            = View.VISIBLE
+            binding.panelProductor.visibility     = View.GONE
+        }
 
         btManager.listener = object : BtManager.Listener {
             override fun onConnected(deviceName: String) {

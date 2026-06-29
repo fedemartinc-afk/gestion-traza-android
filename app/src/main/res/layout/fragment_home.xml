@@ -106,8 +106,9 @@
             android:paddingBottom="4dp"/>
     </LinearLayout>
 
-    <!-- Contenido central -->
+    <!-- Contenido central: Consignatario -->
     <LinearLayout
+        android:id="@+id/panelConsignatario"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -165,5 +166,15 @@
             android:layout_marginTop="16dp"/>
 
     </LinearLayout>
+
+    <!-- Contenido central: Productor — mismo fondo, sin opciones aún -->
+    <LinearLayout
+        android:id="@+id/panelProductor"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:background="@color/fondo"
+        android:visibility="gone"/>
 
 </LinearLayout>

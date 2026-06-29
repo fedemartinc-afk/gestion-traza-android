@@ -40,6 +40,17 @@ class SessionManager(context: Context) {
         get() = prefs.getString("senasa_env", "replica") ?: "replica"
         set(value) = prefs.edit().putString("senasa_env", value).apply()
 
+    // Tipos de sesión habilitados para este usuario ("consignatario", "productor" o ambos)
+    var tiposSesionPermitidos: List<String>
+        get() = (prefs.getString("tipos_sesion_permitidos", "consignatario") ?: "consignatario")
+                    .split(",").filter { it.isNotBlank() }
+        set(value) = prefs.edit().putString("tipos_sesion_permitidos", value.joinToString(",")).apply()
+
+    // Tipo elegido por el usuario en esta sesión ("consignatario" o "productor")
+    var tipoSesionActual: String
+        get() = prefs.getString("tipo_sesion_actual", "") ?: ""
+        set(value) = prefs.edit().putString("tipo_sesion_actual", value).apply()
+
     fun isConfigured(): Boolean = serverUrl.isNotBlank() && token.isNotBlank()
 
     fun clearSession() = prefs.edit().clear().apply()

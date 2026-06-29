@@ -13,6 +13,22 @@
             app:destination="@id/homeFragment"
             app:popUpTo="@id/configFragment"
             app:popUpToInclusive="true"/>
+        <action
+            android:id="@+id/action_config_to_tipoSesion"
+            app:destination="@id/tipoSesionFragment"
+            app:popUpTo="@id/configFragment"
+            app:popUpToInclusive="true"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/tipoSesionFragment"
+        android:name="com.gestiontraza.app.ui.tiposesion.TipoSesionFragment"
+        android:label="Tipo de sesión">
+        <action
+            android:id="@+id/action_tipoSesion_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/tipoSesionFragment"
+            app:popUpToInclusive="true"/>
     </fragment>
 
     <fragment
