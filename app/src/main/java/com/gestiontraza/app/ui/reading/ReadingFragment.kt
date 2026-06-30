@@ -16,6 +16,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.gestiontraza.app.R
 import com.gestiontraza.app.bluetooth.BtManager
+import com.gestiontraza.app.data.SessionManager
 import com.gestiontraza.app.databinding.FragmentReadingBinding
 import org.json.JSONArray
 
@@ -36,9 +37,16 @@ class ReadingFragment : Fragment() {
     override fun onViewCreated(view: View, saved: Bundle?) {
         super.onViewCreated(view, saved)
 
+        val session = SessionManager(requireContext())
+
         adapter = CaravanaAdapter()
         binding.recyclerCaravanas.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerCaravanas.adapter = adapter
+
+        // Ocultar entrada manual si el ajuste no está activo
+        if (!session.manualCaravanas) {
+            binding.panelManualCaravanas.visibility = View.GONE
+        }
 
         vm.caravanas.observe(viewLifecycleOwner) { list ->
             adapter.submitList(list)
@@ -60,13 +68,19 @@ class ReadingFragment : Fragment() {
         // Modo SPP: recibir líneas del BtManager
         val btAdapter = requireContext().getSystemService(BluetoothManager::class.java)?.adapter
         btManager = BtManager(btAdapter)
+        val modoInfo = if (session.manualCaravanas)
+            "Modo HID activo — el lector escribe directo en la app"
+        else
+            "Esperando lector RFID/Bluetooth — cada caravana se agrega automáticamente"
+        binding.tvHidInfo.text = modoInfo
+
         btManager.listener = object : BtManager.Listener {
             override fun onConnected(deviceName: String) {
                 binding.tvHidInfo.text = "Lector SPP conectado: $deviceName"
             }
             override fun onLine(line: String) { vm.addRaw(line) }
             override fun onDisconnected() {
-                binding.tvHidInfo.text = "Modo HID activo — el lector escribe directo en la app"
+                binding.tvHidInfo.text = modoInfo
             }
             override fun onError(msg: String) { binding.tvHidInfo.text = msg }
         }

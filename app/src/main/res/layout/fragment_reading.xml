@@ -90,8 +90,9 @@
         android:padding="8dp"
         android:clipToPadding="false"/>
 
-    <!-- Entrada manual de caravana -->
+    <!-- Entrada manual de caravana (visible solo si ajuste manual activo) -->
     <LinearLayout
+        android:id="@+id/panelManualCaravanas"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"

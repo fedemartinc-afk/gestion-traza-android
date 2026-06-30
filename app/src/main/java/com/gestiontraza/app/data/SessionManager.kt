@@ -51,6 +51,15 @@ class SessionManager(context: Context) {
         get() = prefs.getString("tipo_sesion_actual", "") ?: ""
         set(value) = prefs.edit().putString("tipo_sesion_actual", value).apply()
 
+    // Ajustes de ingreso manual — por defecto solo lector BT y cámara
+    var manualCaravanas: Boolean
+        get() = prefs.getBoolean("manual_caravanas", false)
+        set(value) = prefs.edit().putBoolean("manual_caravanas", value).apply()
+
+    var manualDte: Boolean
+        get() = prefs.getBoolean("manual_dte", false)
+        set(value) = prefs.edit().putBoolean("manual_dte", value).apply()
+
     fun isConfigured(): Boolean = serverUrl.isNotBlank() && token.isNotBlank()
 
     fun clearSession() = prefs.edit().clear().apply()

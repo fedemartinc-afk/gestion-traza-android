@@ -71,6 +71,12 @@ class SendFragment : Fragment() {
 
         fetchLocation()
 
+        // Si manual DTE está desactivado, bloquear teclado en el campo (solo cámara)
+        if (!session.manualDte) {
+            binding.etDte.keyListener = null
+            binding.etDte.hint = "Escanear código de barras del DTe  📷"
+        }
+
         binding.btnEscanearDte.setOnClickListener {
             currentScanField = binding.etDte
             barcodeResultLauncher.launch(BarcodeScanActivity.newIntent(requireContext()))
@@ -128,6 +134,11 @@ class SendFragment : Fragment() {
         val et  = row.findViewById<TextInputEditText>(R.id.etDteExtra)
         val btnScan   = row.findViewById<MaterialButton>(R.id.btnScanDteExtra)
         val btnDelete = row.findViewById<MaterialButton>(R.id.btnDeleteDteExtra)
+
+        if (!session.manualDte) {
+            et.keyListener = null
+            et.hint = "Escanear  📷"
+        }
 
         btnScan.setOnClickListener {
             currentScanField = et

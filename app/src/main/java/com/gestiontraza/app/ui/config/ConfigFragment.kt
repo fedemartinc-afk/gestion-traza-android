@@ -57,6 +57,8 @@ class ConfigFragment : Fragment() {
         // Pre-llenar token si ya hay sesión guardada
         if (session.token.isNotBlank()) binding.etToken.setText(session.token)
 
+        setupAjustes(session)
+
         binding.btnEscanearQR.setOnClickListener {
             qrLauncher.launch(BarcodeScanActivity.newIntent(requireContext()))
         }
@@ -109,6 +111,18 @@ class ConfigFragment : Fragment() {
                     setEstado("Error: ${result.message}", false)
                 }
             }
+        }
+    }
+
+    private fun setupAjustes(session: SessionManager) {
+        binding.switchManualCaravanas.isChecked = session.manualCaravanas
+        binding.switchManualDte.isChecked       = session.manualDte
+
+        binding.switchManualCaravanas.setOnCheckedChangeListener { _, checked ->
+            session.manualCaravanas = checked
+        }
+        binding.switchManualDte.setOnCheckedChangeListener { _, checked ->
+            session.manualDte = checked
         }
     }
 
