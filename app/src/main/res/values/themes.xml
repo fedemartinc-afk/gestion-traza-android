@@ -3,8 +3,8 @@
         <item name="colorPrimary">@color/verde_oscuro</item>
         <item name="colorPrimaryVariant">@color/verde_medio</item>
         <item name="colorOnPrimary">@color/blanco</item>
-        <item name="colorSecondary">@color/amarillo</item>
-        <item name="colorOnSecondary">#1a1a18</item>
+        <item name="colorSecondary">@color/verde_ok</item>
+        <item name="colorOnSecondary">#ffffff</item>
         <item name="android:statusBarColor">@color/verde_oscuro</item>
         <item name="android:navigationBarColor">@color/verde_oscuro</item>
         <item name="windowActionBar">false</item>
@@ -21,8 +21,8 @@
     </style>
 
     <style name="BtnSecondary" parent="Widget.MaterialComponents.Button.OutlinedButton">
-        <item name="strokeColor">@color/verde_oscuro</item>
-        <item name="android:textColor">@color/verde_oscuro</item>
+        <item name="strokeColor">@color/verde_ok</item>
+        <item name="android:textColor">@color/verde_ok</item>
         <item name="cornerRadius">10dp</item>
     </style>
 
