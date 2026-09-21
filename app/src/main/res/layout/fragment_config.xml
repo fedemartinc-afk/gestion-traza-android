@@ -12,15 +12,24 @@
         android:padding="24dp"
         android:gravity="center">
 
-        <TextView
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="start"
+            android:src="@drawable/ic_arrow_back"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"
+            android:contentDescription="Volver"
+            android:layout_marginTop="8dp"/>
+
+        <ImageView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="GESTION TRAZA"
-            android:textColor="@color/blanco"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.05"
-            android:layout_marginTop="32dp"/>
+            android:layout_height="30dp"
+            android:adjustViewBounds="true"
+            android:src="@drawable/logo_wordmark_white"
+            android:contentDescription="Gestión Traza"
+            android:layout_marginTop="16dp"/>
 
         <ImageView
             android:layout_width="72dp"
@@ -33,6 +42,17 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="BY LOOP AGTECH"
+            android:textColor="@color/verde_ok"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvSubtitulo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="Iniciá sesión escaneando el QR de la web"
             android:textColor="#99ffffff"
             android:textSize="13sp"
@@ -40,25 +60,34 @@
             android:layout_marginTop="6dp"
             android:layout_marginBottom="36dp"/>
 
-        <!-- QR: acción principal -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnEscanearQR"
+        <!-- QR: acción principal (solo sin sesión activa, o agregando una cuenta nueva) -->
+        <LinearLayout
+            android:id="@+id/llQrEntry"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:text="📷   Escanear QR de la web"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            style="@style/BtnGray"
-            app:cornerRadius="14dp"
-            android:layout_marginBottom="24dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="— o ingresá el token manualmente —"
-            android:textColor="#66ffffff"
-            android:textSize="11sp"
-            android:layout_marginBottom="16dp"/>
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEscanearQR"
+                android:layout_width="match_parent"
+                android:layout_height="72dp"
+                android:text="📷   Escanear QR de la web"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                style="@style/BtnGray"
+                app:cornerRadius="14dp"
+                android:layout_marginBottom="24dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="— o ingresá el token manualmente —"
+                android:textColor="#66ffffff"
+                android:textSize="11sp"
+                android:layout_marginBottom="16dp"/>
+
+        </LinearLayout>
 
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
@@ -72,46 +101,92 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Token de sesión"
-                    android:textSize="11sp"
-                    android:textColor="@color/gris_texto"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.08"
-                    android:layout_marginBottom="6dp"/>
-
-                <com.google.android.material.textfield.TextInputLayout
+                <!-- Ingreso de token: solo sin sesión activa, o agregando una cuenta nueva -->
+                <LinearLayout
+                    android:id="@+id/llTokenManual"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    app:endIconMode="clear_text"
-                    android:layout_marginBottom="8dp">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etToken"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Token de sesión"
+                        android:textSize="11sp"
+                        android:textColor="@color/gris_texto"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.08"
+                        android:layout_marginBottom="6dp"/>
+
+                    <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Token generado en la web"
-                        android:inputType="textVisiblePassword"
-                        android:fontFamily="monospace"
-                        android:textSize="13sp"/>
-                </com.google.android.material.textfield.TextInputLayout>
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        app:endIconMode="clear_text"
+                        android:layout_marginBottom="8dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etToken"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Token generado en la web"
+                            android:inputType="textVisiblePassword"
+                            android:fontFamily="monospace"
+                            android:textSize="13sp"/>
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="El QR y el token los encontrás en tu Perfil de la web."
-                    android:textSize="11sp"
-                    android:textColor="@color/gris_texto"
-                    android:layout_marginBottom="20dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="El QR y el token los encontrás en tu Perfil de la web."
+                        android:textSize="11sp"
+                        android:textColor="@color/gris_texto"
+                        android:layout_marginBottom="20dp"/>
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnConectar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Conectar"
+                        style="@style/BtnPrimary"/>
+
+                </LinearLayout>
+
+                <!-- Con sesión activa: único botón visible para sumar otra cuenta -->
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnConectar"
+                    android:id="@+id/btnAgregarNuevaCuenta"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Conectar"
-                    style="@style/BtnPrimary"/>
+                    android:text="➕  Agregar nueva cuenta"
+                    style="@style/BtnPrimary"
+                    android:visibility="gone"/>
+
+                <!-- Cambiar de perfil sin volver a escanear el QR (solo con sesión activa) -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCambiarPerfil"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cambiar perfil"
+                    style="@style/BtnSecondary"
+                    android:layout_marginTop="10dp"/>
+
+                <!-- Elegir otra cuenta guardada en este dispositivo -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCambiarCuenta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cambiar de cuenta"
+                    style="@style/BtnSecondary"
+                    android:layout_marginTop="10dp"/>
+
+                <TextView
+                    android:id="@+id/tvPerfilActual"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="11sp"
+                    android:textColor="@color/gris_texto"
+                    android:gravity="center"
+                    android:layout_marginTop="6dp"/>
 
                 <TextView
                     android:id="@+id/tvEstado"
@@ -128,6 +203,7 @@
 
         <!-- Card Ajustes de ingreso -->
         <androidx.cardview.widget.CardView
+            android:id="@+id/cardAjustes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="16dp"
@@ -234,6 +310,15 @@
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:id="@+id/tvVersion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#66ffffff"
+            android:textSize="11sp"
+            android:layout_marginTop="20dp"/>
 
         <View android:layout_width="0dp" android:layout_height="32dp"/>
 

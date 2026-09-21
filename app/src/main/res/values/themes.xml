@@ -40,4 +40,13 @@
         <item name="android:paddingTop">14dp</item>
         <item name="android:paddingBottom">14dp</item>
     </style>
+
+    <style name="BtnAmarillo" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/amarillo</item>
+        <item name="android:textColor">#1a1a18</item>
+        <item name="android:textSize">14sp</item>
+        <item name="cornerRadius">10dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
 </resources>

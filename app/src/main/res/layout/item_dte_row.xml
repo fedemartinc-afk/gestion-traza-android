@@ -18,11 +18,27 @@
             android:id="@+id/etDteExtra"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Ej: 032030063-0"
-            android:inputType="textNoSuggestions"
+            android:hint="Escanear código de barras DT-e"
+            android:inputType="number"
             android:fontFamily="monospace"
             android:textSize="14sp"/>
     </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnToggleTecladoDteExtra"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ABC"
+        android:textSize="11sp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        app:cornerRadius="8dp"
+        android:layout_marginEnd="4dp"/>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnScanDteExtra"

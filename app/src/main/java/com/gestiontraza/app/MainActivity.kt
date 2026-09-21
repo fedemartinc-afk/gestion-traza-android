@@ -108,8 +108,20 @@ class MainActivity : AppCompatActivity() {
         val navHost = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val navController = navHost.navController
         val navGraph = navController.navInflater.inflate(R.navigation.nav_graph)
+        val session = SessionManager(this)
+        // Sin sesión → escanear QR. Con sesión pero sin perfil elegido → selector de perfil.
+        // Si el perfil guardado ya no está entre los permitidos (se lo revocaron en
+        // la web), se descarta y se vuelve al selector en lugar de entrar con él.
         navGraph.setStartDestination(
-            if (SessionManager(this).isConfigured()) R.id.homeFragment else R.id.configFragment
+            when {
+                !session.isConfigured()            -> R.id.configFragment
+                session.tipoSesionActual.isBlank() -> R.id.tipoSesionFragment
+                session.tipoSesionActual !in session.tiposSesionPermitidos -> {
+                    session.tipoSesionActual = ""
+                    R.id.tipoSesionFragment
+                }
+                else                               -> R.id.homeFragment
+            }
         )
         navController.graph = navGraph
     }

@@ -1,5 +1,6 @@
 package com.gestiontraza.app.data
 
+import android.util.Log
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -36,6 +37,34 @@ object ApiClient {
             }
         } catch (e: Exception) {
             Result(false, "Sin conexión: ${e.message}")
+        }
+    }
+
+    /**
+     * Avisa al servidor qué caravanas se consultaron correctamente en SENASA,
+     * para el contador de caravanas únicas por usuario (web + móvil). Es
+     * "mejor esfuerzo": si falla, no debe afectar la consulta real — se llama
+     * sin bloquear la pantalla y se ignora cualquier error.
+     */
+    fun registrarConsultas(baseUrl: String, token: String, caravanas: List<String>) {
+        if (caravanas.isEmpty()) return
+        try {
+            val body = JSONObject().apply { put("caravanas", JSONArray(caravanas)) }
+            val req = Request.Builder()
+                .url("$baseUrl/api/android/registrar-consulta")
+                .addHeader("Authorization", "Bearer $token")
+                .post(body.toString().toRequestBody(JSON))
+                .build()
+            val resp = client.newCall(req).execute()
+            if (resp.isSuccessful) {
+                Log.i("ApiClient", "registrarConsultas: OK (${caravanas.size} caravana(s)) en $baseUrl")
+            } else {
+                Log.w("ApiClient", "registrarConsultas: HTTP ${resp.code} en $baseUrl/api/android/registrar-consulta — ${resp.body?.string()}")
+            }
+            resp.close()
+        } catch (e: Exception) {
+            // No debe interrumpir el flujo real de consulta — pero sí queda logueado para poder diagnosticar.
+            Log.w("ApiClient", "registrarConsultas: no se pudo notificar a $baseUrl (${e.message})")
         }
     }
 
@@ -98,10 +127,46 @@ object ApiClient {
         }
     }
 
+    /**
+     * Envío genérico al usuario web, con tipo de operación.
+     * Lo usan los módulos del perfil productor para que la web registre de dónde viene el dato.
+     */
+    fun enviarAWeb(
+        baseUrl: String,
+        token: String,
+        dte: String,
+        caravanas: List<String>,
+        tipo: String,
+        extra: Map<String, String> = emptyMap()
+    ): Result {
+        return try {
+            val body = JSONObject().apply {
+                put("dte", dte)
+                put("caravanas", JSONArray(caravanas))
+                put("tipo", tipo)
+                extra.forEach { (k, v) -> put(k, v) }
+            }
+            val req = Request.Builder()
+                .url("$baseUrl/api/android/enviar")
+                .addHeader("Authorization", "Bearer $token")
+                .post(body.toString().toRequestBody(JSON))
+                .build()
+            val resp = client.newCall(req).execute()
+            val rb = resp.body?.string() ?: ""
+            if (resp.isSuccessful) Result(true, "Enviado al usuario web")
+            else {
+                val j = runCatching { JSONObject(rb) }.getOrNull()
+                Result(false, j?.optString("error") ?: "Error ${resp.code}")
+            }
+        } catch (e: Exception) {
+            Result(false, "Sin conexión: ${e.message}")
+        }
+    }
+
     private fun senasaUrl(env: String): String {
         val base = when (env) {
             "produccion_gov" -> "https://aps2.senasa.gov.ar/sigsa/seam/resource/rest"
-            "produccion_gob" -> "https://aps2.senasa.gob.ar/sigsa/seam/resource/rest"
+            "local"          -> "http://localhost:8080/sigsa/seam/resource/rest"
             else             -> "https://rep.senasa.gov.ar/sigsa/seam/resource/rest"
         }
         return "$base/lotes-microchips/guardar"
@@ -118,6 +183,9 @@ object ApiClient {
         lon: Double?,
         senasaEnv: String = "replica"
     ): Result {
+        FormatoCaravana.invalidas(caravanas).takeIf { it.isNotEmpty() }?.let {
+            return Result(false, FormatoCaravana.mensaje(it))
+        }
         return try {
             // 1. Llamar a SENASA directamente (igual que lo hace el navegador web)
             val senasaBody = buildSenasaBody(wsUsername, wsToken, dte, caravanas, lat, lon)

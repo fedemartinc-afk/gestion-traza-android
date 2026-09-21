@@ -26,6 +26,10 @@ class TipoSesionFragment : Fragment() {
         val session = SessionManager(requireContext())
         val permitidos = session.tiposSesionPermitidos
 
+        val nav = findNavController()
+        if (nav.previousBackStackEntry == null) binding.btnBack.visibility = View.GONE
+        else binding.btnBack.setOnClickListener { nav.navigateUp() }
+
         binding.tvSesionNombre.text = session.sesionNombre.ifBlank { session.usuarioNombre }
 
         binding.btnConsignatario.setOnClickListener {
@@ -45,7 +49,7 @@ class TipoSesionFragment : Fragment() {
             if ("productor" !in permitidos) {
                 Toast.makeText(
                     requireContext(),
-                    "Tu usuario no tiene acceso al perfil Productor",
+                    "Tu usuario no tiene acceso al perfil Productor Agropecuario",
                     Toast.LENGTH_LONG
                 ).show()
                 return@setOnClickListener
