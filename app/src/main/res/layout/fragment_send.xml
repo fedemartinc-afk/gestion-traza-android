@@ -218,6 +218,25 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Guarda la lectura en "Sesiones guardadas en dispositivo" -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCrearSesion"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="🗂  Crear sesión"
+                android:textSize="15sp"
+                style="@style/BtnPrimary"
+                android:layout_marginBottom="8dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVerSesiones"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="🗂  Ver sesiones en este dispositivo"
+            android:textSize="15sp"
+            style="@style/BtnPrimary"
+            android:layout_marginBottom="8dp"/>
+
             <!-- Botón enviar a DT-e (cierre SENASA) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnEnviarCierre"
@@ -237,25 +256,6 @@
                 android:textColor="@color/gris_texto"
                 android:gravity="center"
                 android:layout_marginBottom="16dp"/>
-
-            <!-- Guarda la lectura en "Sesiones guardadas en dispositivo" -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCrearSesion"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="🗂  Crear sesión"
-                android:textSize="15sp"
-                style="@style/BtnPrimary"
-                android:layout_marginBottom="8dp"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnVerSesiones"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="🗂  Ver sesiones en este dispositivo"
-            android:textSize="15sp"
-            style="@style/BtnPrimary"
-            android:layout_marginBottom="8dp"/>
 
 
             <!-- Progreso -->
