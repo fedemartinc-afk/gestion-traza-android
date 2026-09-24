@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.gestiontraza.app.lectores.ConsultaConReintentosTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-24T02:03:25" hostname="22-DTI_N122134" time="0.095">
-  <properties/>
-  <testcase name="sePlantaEnDiezReintentosSiNuncaAnda" classname="com.gestiontraza.app.lectores.ConsultaConReintentosTest" time="0.075"/>
-  <testcase name="recorreTodaLaListaSinDetenerseYLuegoReintentaLasFallidas" classname="com.gestiontraza.app.lectores.ConsultaConReintentosTest" time="0.012"/>
-  <testcase name="devuelveUnResultadoPorCadaCodigoSinDuplicarLosRepetidos" classname="com.gestiontraza.app.lectores.ConsultaConReintentosTest" time="0.006"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

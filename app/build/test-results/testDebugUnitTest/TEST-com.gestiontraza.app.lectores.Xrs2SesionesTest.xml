@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.gestiontraza.app.lectores.Xrs2SesionesTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-09-24T02:03:27" hostname="22-DTI_N122134" time="0.297">
-  <properties/>
-  <testcase name="corrigeEspacioYCeroPerdidoYMantieneElEidAunqueNoSeaCaravanaSenasa" classname="com.gestiontraza.app.lectores.Xrs2SesionesTest" time="0.297"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

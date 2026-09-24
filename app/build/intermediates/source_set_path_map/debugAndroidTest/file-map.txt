@@ -1,4 +1,0 @@
-com.gestiontraza.app.test.app-androidTest-0 C:\Users\Dell\AndroidStudioProjects\GestionTraza\app\build\generated\res\resValues\androidTest\debug
-com.gestiontraza.app.test.app-mergeDebugAndroidTestResources-1 C:\Users\Dell\AndroidStudioProjects\GestionTraza\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
-com.gestiontraza.app.test.app-mergeDebugAndroidTestResources-2 C:\Users\Dell\AndroidStudioProjects\GestionTraza\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
-com.gestiontraza.app.test.app-merged_res-3 C:\Users\Dell\AndroidStudioProjects\GestionTraza\app\build\intermediates\merged_res\debugAndroidTest

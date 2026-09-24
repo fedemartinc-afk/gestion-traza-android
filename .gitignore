@@ -18,3 +18,8 @@ local.properties
 # Keystore
 *.jks
 *.keystore
+
+/app/build
+/build
+/app/release
+*.apk
