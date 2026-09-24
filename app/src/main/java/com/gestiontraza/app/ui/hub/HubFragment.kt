@@ -19,10 +19,12 @@ import androidx.navigation.fragment.navArgs
 import com.gestiontraza.app.R
 import com.gestiontraza.app.data.ApiClient
 import com.gestiontraza.app.data.PendingQueue
+import com.gestiontraza.app.data.SessionFileStore
 import com.gestiontraza.app.data.SessionManager
 import com.gestiontraza.app.data.FormatoCaravana
 import com.gestiontraza.app.databinding.DialogDteUnicoBinding
 import com.gestiontraza.app.databinding.FragmentHubBinding
+import com.gestiontraza.app.ui.importar.guardarSesionImportada
 import com.gestiontraza.app.ui.send.BarcodeScanActivity
 import com.gestiontraza.app.ui.send.configurarTecladoDte
 import com.gestiontraza.app.ui.send.confirmarEnvioSinVerificar
@@ -112,6 +114,16 @@ class HubFragment : Fragment() {
         }
         binding.btnEnviarWebSinVerificar.setOnClickListener { enviarSinVerificar() }
         binding.btnEnviarCierre.setOnClickListener { pedirDteCierre() }
+        binding.btnVerSesiones.setOnClickListener {
+            findNavController().navigate(HubFragmentDirections.actionHubToSesiones())
+        }
+        binding.btnCrearSesion.setOnClickListener {
+            guardarSesionImportada(SessionFileStore(requireContext()), "", "Lectura", caravanas, "caravanas") { nombre ->
+                android.widget.Toast.makeText(
+                    requireContext(), "Sesión \"$nombre\" guardada en el dispositivo", android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 
     /** Pide el DTe (escaneado o escrito) al que se enviará el cierre a SENASA. */
@@ -287,6 +299,7 @@ class HubFragment : Fragment() {
         binding.btnEstadoTri.isEnabled              = !loading
         binding.btnEstadoPredespacho.isEnabled      = !loading
         binding.btnEnviarCierre.isEnabled           = !loading
+        binding.btnCrearSesion.isEnabled            = !loading
         if (loading) binding.tvResultado.visibility = View.GONE
     }
 

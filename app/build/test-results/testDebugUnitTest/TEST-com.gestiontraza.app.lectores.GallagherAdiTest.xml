@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.gestiontraza.app.lectores.GallagherAdiTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-09-24T02:03:26" hostname="22-DTI_N122134" time="1.133">
+  <properties/>
+  <testcase name="prefiereElEidCuandoElFullRfidNoEsUnaCaravanaValida" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.145"/>
+  <testcase name="normalizaRfid" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.001"/>
+  <testcase name="errorDelLectorSeInforma" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.112"/>
+  <testcase name="finalizarApagaTransferencia" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.154"/>
+  <testcase name="detectaMarcaPorNombre" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.001"/>
+  <testcase name="pedidoMasivoConAnimalesDeOtrasSesionesNoSeMezcla" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.095"/>
+  <testcase name="sesionConSoloGuidsPideAnimalesUnoAUno" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.141"/>
+  <testcase name="xmlConOtraFormaUsaPatronDe15Digitos" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.06"/>
+  <testcase name="pedidoMasivoIncompletoCaeAlMetodoUnoAUno" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.185"/>
+  <testcase name="siFallaSesionUsaAnimalesPorSesion" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.079"/>
+  <testcase name="listaSesionesConContentLength" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.112"/>
+  <testcase name="descargaConTrozosYNormalizaCaravanas" classname="com.gestiontraza.app.lectores.GallagherAdiTest" time="0.044"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

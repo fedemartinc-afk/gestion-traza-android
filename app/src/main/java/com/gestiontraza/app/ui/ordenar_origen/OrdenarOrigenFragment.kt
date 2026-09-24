@@ -21,6 +21,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.gestiontraza.app.R
 import com.gestiontraza.app.data.ApiClient
+import com.gestiontraza.app.data.ConsultaConReintentos
 import com.gestiontraza.app.data.PendingQueue
 import com.gestiontraza.app.data.SenasaClient
 import com.gestiontraza.app.data.SessionManager
@@ -28,7 +29,6 @@ import com.gestiontraza.app.databinding.FragmentOrdenarOrigenBinding
 import com.gestiontraza.app.databinding.ItemGrupoOrdenarBinding
 import com.gestiontraza.app.ui.send.BarcodeScanActivity
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -120,37 +120,30 @@ class OrdenarOrigenFragment : Fragment() {
         fetchLocation()
     }
 
-    /** Consulta una caravana en SENASA, reintentando hasta 10 veces si falla. */
-    private suspend fun consultarConReintentos(base: String, cod: String, progreso: (Int) -> Unit): SenasaClient.EstadoCaravana {
-        var estado: SenasaClient.EstadoCaravana
-        var intento = 1
-        while (true) {
-            withContext(Dispatchers.Main) { progreso(intento) }
-            estado = withContext(Dispatchers.IO) {
-                SenasaClient.consultarCaravana(base, session.wsUsername, session.wsToken, cod)
-            }
-            if (estado.ok || intento >= 10) break
-            intento++
-            delay(400)
-        }
-        return estado
-    }
-
     /** Consulta cada caravana leída una sola vez — hace falta su RENSPA actual para poder
-     *  compararla con el origen de cada DTe, y de paso alimenta los contadores globales. */
+     *  compararla con el origen de cada DTe, y de paso alimenta los contadores globales.
+     *  Se recorre toda la lista sin detenerse en las que fallan y, al terminar, se
+     *  reintentan como grupo hasta 10 veces más — mismo criterio que la web. */
     private suspend fun consultarDatosCaravanas() {
         if (session.wsUsername.isEmpty()) { showToast("Sin credenciales SENASA"); return }
         binding.progressCarga.visibility = View.VISIBLE
         binding.tvProgreso.visibility = View.VISIBLE
         val base = SenasaClient.senasaBase(session.senasaEnv)
-        caravanas.forEachIndexed { idx, cod ->
-            datosCaravana[cod] = consultarConReintentos(base, cod) { intento ->
-                binding.tvProgreso.text = if (intento == 1)
-                    "Consultando datos ${idx + 1} de ${caravanas.size}…"
+        val estados = ConsultaConReintentos.consultar(
+            caravanas,
+            onProgreso = { actual, total, pasada ->
+                binding.tvProgreso.text = if (pasada == 1)
+                    "Consultando datos $actual de $total…"
                 else
-                    "Consultando datos ${idx + 1} de ${caravanas.size}… (reintento $intento de 10)"
+                    "Consultando datos $actual de $total… (reintento ${pasada - 1} de ${ConsultaConReintentos.MAX_REINTENTOS})"
+            },
+            esValido = { it.ok }
+        ) { cod ->
+            withContext(Dispatchers.IO) {
+                SenasaClient.consultarCaravana(base, session.wsUsername, session.wsToken, cod)
             }
         }
+        caravanas.forEach { cod -> datosCaravana[cod] = estados.getValue(cod) }
         binding.progressCarga.visibility = View.GONE
         binding.tvProgreso.visibility = View.GONE
         caravanasListas = true
@@ -172,14 +165,21 @@ class OrdenarOrigenFragment : Fragment() {
         binding.progressCarga.visibility = View.VISIBLE
         binding.tvProgreso.visibility = View.VISIBLE
         val base = SenasaClient.senasaBase(session.senasaEnv)
-        fallidas.forEachIndexed { idx, cod ->
-            datosCaravana[cod] = consultarConReintentos(base, cod) { intento ->
-                binding.tvProgreso.text = if (intento == 1)
-                    "Reintentando ${idx + 1} de ${fallidas.size}…"
+        val estados = ConsultaConReintentos.consultar(
+            fallidas,
+            onProgreso = { actual, total, pasada ->
+                binding.tvProgreso.text = if (pasada == 1)
+                    "Reintentando $actual de $total…"
                 else
-                    "Reintentando ${idx + 1} de ${fallidas.size}… (intento $intento de 10)"
+                    "Reintentando $actual de $total… (intento ${pasada - 1} de ${ConsultaConReintentos.MAX_REINTENTOS})"
+            },
+            esValido = { it.ok }
+        ) { cod ->
+            withContext(Dispatchers.IO) {
+                SenasaClient.consultarCaravana(base, session.wsUsername, session.wsToken, cod)
             }
         }
+        fallidas.forEach { cod -> datosCaravana[cod] = estados.getValue(cod) }
         binding.progressCarga.visibility = View.GONE
         binding.tvProgreso.visibility = View.GONE
         binding.btnReintentarFallidas.isEnabled = true

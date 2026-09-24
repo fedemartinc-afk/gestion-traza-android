@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="amarillo">#f5a623</color>
+    <color name="blanco">#ffffff</color>
+    <color name="fondo">#f5f7fa</color>
+    <color name="gris_linea">#e2e8f0</color>
+    <color name="gris_texto">#64748b</color>
+    <color name="rojo_error">#c62828</color>
+    <color name="rojo_error_bg">#ffebee</color>
+    <color name="verde_medio">#243148</color>
+    <color name="verde_ok">#64bb38</color>
+    <color name="verde_ok_bg">#eaf7de</color>
+    <color name="verde_oscuro">#192232</color>
+    <string name="app_name">Gestión Traza</string>
+    <style name="BtnAmarillo" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/amarillo</item>
+        <item name="android:textColor">#1a1a18</item>
+        <item name="android:textSize">14sp</item>
+        <item name="cornerRadius">10dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+    <style name="BtnDanger" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/rojo_error</item>
+        <item name="android:textColor">@color/rojo_error</item>
+        <item name="cornerRadius">10dp</item>
+    </style>
+    <style name="BtnGray" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">#757575</item>
+        <item name="android:textColor">@color/blanco</item>
+        <item name="android:textSize">14sp</item>
+        <item name="cornerRadius">10dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+    <style name="BtnPrimary" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/verde_oscuro</item>
+        <item name="android:textColor">@color/blanco</item>
+        <item name="android:textSize">14sp</item>
+        <item name="cornerRadius">10dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+    <style name="BtnSecondary" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/verde_ok</item>
+        <item name="android:textColor">@color/verde_ok</item>
+        <item name="cornerRadius">10dp</item>
+    </style>
+    <style name="Theme.GestionTraza" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        <item name="colorPrimary">@color/verde_oscuro</item>
+        <item name="colorPrimaryVariant">@color/verde_medio</item>
+        <item name="colorOnPrimary">@color/blanco</item>
+        <item name="colorSecondary">@color/verde_ok</item>
+        <item name="colorOnSecondary">#ffffff</item>
+        <item name="android:statusBarColor">@color/verde_oscuro</item>
+        <item name="android:navigationBarColor">@color/verde_oscuro</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+</resources>

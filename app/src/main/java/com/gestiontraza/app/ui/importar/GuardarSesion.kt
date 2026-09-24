@@ -2,8 +2,10 @@ package com.gestiontraza.app.ui.importar
 
 import android.text.InputFilter
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import com.gestiontraza.app.data.FormatoCaravana
 import com.gestiontraza.app.data.SessionFileStore
 
 /**
@@ -23,9 +25,14 @@ fun Fragment.guardarSesionImportada(
     unidad: String = "caravanas",
     onGuardada: (String) -> Unit
 ) {
-    val duplicada = store.buscarDuplicada(lineas)
+    // Corrige espacios sueltos y el "0" inicial perdido (14 dígitos que arrancan en
+    // "32" en vez de "0320") antes de comparar duplicados y de guardar — así el
+    // aviso de duplicada compara contra el número ya corregido.
+    val corregidas = lineas.map { FormatoCaravana.normalizarImportada(it) }
+    avisarFormatoImportacion(corregidas)
+    val duplicada = store.buscarDuplicada(corregidas)
     if (duplicada == null) {
-        pedirNombreYGuardar(store, nombreSugerido, origen, lineas, unidad, onGuardada)
+        pedirNombreYGuardar(store, nombreSugerido, origen, corregidas, unidad, onGuardada)
         return
     }
     AlertDialog.Builder(requireContext())
@@ -36,10 +43,25 @@ fun Fragment.guardarSesionImportada(
                 "¿Querés guardarla igual como una sesión nueva?"
         )
         .setPositiveButton("Guardar igual") { _, _ ->
-            pedirNombreYGuardar(store, nombreSugerido, origen, lineas, unidad, onGuardada)
+            pedirNombreYGuardar(store, nombreSugerido, origen, corregidas, unidad, onGuardada)
         }
         .setNegativeButton("Cancelar", null)
         .show()
+}
+
+/** Avisa (sin bloquear) si, después de corregir espacios y el "0" inicial, quedan
+ *  caravanas que no cumplen el formato 0320 + 11 dígitos. */
+private fun Fragment.avisarFormatoImportacion(lineas: List<String>) {
+    val invalidas = FormatoCaravana.invalidas(lineas)
+    if (invalidas.isEmpty()) return
+    val n = invalidas.size
+    val ejemplos = invalidas.take(5).joinToString(", ")
+    Toast.makeText(
+        requireContext(),
+        "⚠ $n caravana${if (n != 1) "s" else ""} con formato inválido (no son 0320 + 11 dígitos): $ejemplos" +
+            if (n > 5) "…" else "",
+        Toast.LENGTH_LONG
+    ).show()
 }
 
 private fun Fragment.pedirNombreYGuardar(

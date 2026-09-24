@@ -253,6 +253,7 @@ class SessionManager(context: Context) {
      */
     private fun asegurarCuentaActiva() {
         if (prefs.contains(KEY_CUENTAS)) {
+            corregirIngresoManualPorDefectoUnaVez()
             val arr = cuentas()
             val id = prefs.getString(KEY_CUENTA_ACTIVA, null)
             if (id == null || buscarIndice(arr, id) < 0) {
@@ -275,12 +276,35 @@ class SessionManager(context: Context) {
             put("senasa_env", prefs.getString("senasa_env", "replica") ?: "replica")
             put("tipos_sesion_permitidos", prefs.getString("tipos_sesion_permitidos", "consignatario") ?: "consignatario")
             put("tipo_sesion_actual", prefs.getString("tipo_sesion_actual", "") ?: "")
-            put("manual_caravanas", prefs.getBoolean("manual_caravanas", false))
-            put("manual_dte", prefs.getBoolean("manual_dte", false))
+            // Activados por defecto (ver manualCaravanas/manualDte más arriba): una cuenta
+            // de antes de que existiera este ajuste nunca guardó nada acá, así que sin el
+            // "true" de respaldo esta migración los dejaba apagados para siempre.
+            put("manual_caravanas", prefs.getBoolean("manual_caravanas", true))
+            put("manual_dte", prefs.getBoolean("manual_dte", true))
             put("ultimo_renspa", prefs.getString("ultimo_renspa", "") ?: "")
         }
         guardarCuentas(JSONArray().put(cuenta))
         prefs.edit().putString(KEY_CUENTA_ACTIVA, cuenta.getString("id")).apply()
+    }
+
+    /**
+     * Corrección de una sola vez: la migración vieja guardaba "false" explícito para
+     * el ingreso manual de caravanas y de DTe en cuentas creadas antes de que
+     * existiera ese ajuste, así que quedaba apagado para siempre en vez de prender
+     * por defecto como corresponde. Se fuerza a "true" una única vez en todas las
+     * cuentas ya guardadas; a partir de ahí, si el usuario lo apaga desde
+     * Configuración, esa elección se respeta (no se vuelve a tocar).
+     */
+    private fun corregirIngresoManualPorDefectoUnaVez() {
+        if (prefs.getBoolean(KEY_FIX_INGRESO_MANUAL, false)) return
+        val arr = cuentas()
+        for (i in 0 until arr.length()) {
+            val cuenta = arr.getJSONObject(i)
+            cuenta.put("manual_caravanas", true)
+            cuenta.put("manual_dte", true)
+        }
+        guardarCuentas(arr)
+        prefs.edit().putBoolean(KEY_FIX_INGRESO_MANUAL, true).apply()
     }
 
     private fun crearCuentaVacia(): String {
@@ -294,5 +318,6 @@ class SessionManager(context: Context) {
     private companion object {
         const val KEY_CUENTAS = "cuentas"
         const val KEY_CUENTA_ACTIVA = "cuenta_activa_id"
+        const val KEY_FIX_INGRESO_MANUAL = "fix_ingreso_manual_default_aplicado"
     }
 }

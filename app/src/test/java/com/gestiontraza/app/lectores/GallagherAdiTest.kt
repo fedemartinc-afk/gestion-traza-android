@@ -167,6 +167,24 @@ class GallagherAdiTest {
         assertEquals(null, AdiXml.normalizarRfid("1234"))
         assertEquals("032010010451307", AdiXml.normalizarRfid("032 010010451307"))
         assertEquals(null, AdiXml.normalizarRfid("8000080254AB5D6B"))   // fullRfid hexadecimal real
+        // Antes se aceptaba cualquier número de 15 dígitos o se completaba con ceros
+        // un número de 13, sin importar el prefijo: eso importaba caravanas con un
+        // número equivocado. Ahora, si no es exactamente 0320 + 11 dígitos (o 32 + 12
+        // sin el primer cero), se descarta en vez de adivinar.
+        assertEquals(null, AdiXml.normalizarRfid("111000123456789"))   // 15 dígitos, prefijo equivocado
+        assertEquals(null, AdiXml.normalizarRfid("0123456789012"))     // 13 dígitos: no se completa a ciegas
+    }
+
+    @Test fun prefiereElEidCuandoElFullRfidNoEsUnaCaravanaValida() = runBlocking {
+        // Caso real (sesión "chica" del 18/09): el fullRfid es puramente numérico
+        // (sin letras) pero no arranca con 0320 — antes se aceptaba igual y pisaba
+        // el eid correcto. csv oficial de ese mismo animal: 032 010010451312.
+        val animal = """<ads:animal><ads:internalIdentifier>a1</ads:internalIdentifier>
+            <ads:tag></ads:tag><ads:eid>032 010010451312</ads:eid><ads:fullRfid>008000080254570</ads:fullRfid></ads:animal>"""
+        val sesion = "<ads:session xmlns:ads=\"u\"><ads:animals><ads:animal><ads:animalId><ads:internalIdentifier>a1</ads:internalIdentifier></ads:animalId></ads:animal></ads:animals></ads:session>"
+        val uno = "<ads:animals xmlns:ads=\"u\">$animal</ads:animals>"
+        val l = LectorFalso(mapOf("/sessions/g-1" to { conLargo(sesion) }, "/animals" to { conLargo(uno) }))
+        assertEquals(listOf("032010010451312"), driver(l).descargarSesion(SesionLector("g-1", "x", "", 1)))
     }
 
     @Test fun detectaMarcaPorNombre() {

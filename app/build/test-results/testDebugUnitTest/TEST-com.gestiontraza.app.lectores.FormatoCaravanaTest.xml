@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.gestiontraza.app.lectores.FormatoCaravanaTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-24T02:03:26" hostname="22-DTI_N122134" time="0.005">
+  <properties/>
+  <testcase name="normalizarImportada_saca_espacios_sueltos" classname="com.gestiontraza.app.lectores.FormatoCaravanaTest" time="0.002"/>
+  <testcase name="aceptaQuince_digitos_con_0320" classname="com.gestiontraza.app.lectores.FormatoCaravanaTest" time="0.001"/>
+  <testcase name="normalizarImportada_no_adivina_lo_que_no_puede_corregir" classname="com.gestiontraza.app.lectores.FormatoCaravanaTest" time="0.0"/>
+  <testcase name="rechazaLoDemas" classname="com.gestiontraza.app.lectores.FormatoCaravanaTest" time="0.001"/>
+  <testcase name="normalizarImportada_agrega_el_cero_perdido" classname="com.gestiontraza.app.lectores.FormatoCaravanaTest" time="0.0"/>
+  <testcase name="listaYMensaje" classname="com.gestiontraza.app.lectores.FormatoCaravanaTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

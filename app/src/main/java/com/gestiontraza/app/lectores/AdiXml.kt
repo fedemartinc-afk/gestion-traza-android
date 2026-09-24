@@ -132,20 +132,23 @@ object AdiXml {
     }
 
     /**
-     * Deja solo dígitos y devuelve el número de 15 dígitos, o null si no lo es. Los
-     * Gallagher viejos pierden los ceros iniciales (los de Argentina empiezan con
-     * 032…): con 13 o 14 dígitos se completan con ceros a la izquierda.
+     * Valida el formato argentino de caravana: 0320 + 11 dígitos (15 en total). Si el
+     * lector devolvió el número sin el primer cero (14 dígitos, arrancando en "32" en
+     * vez de "0320"), se lo agrega. Cualquier otra longitud o prefijo se descarta —no
+     * se adivina el resto del número completando con ceros, que fue lo que hizo que
+     * algunas caravanas de Gallagher se importaran con un número equivocado.
      */
     fun normalizarRfid(crudo: String?): String? {
         // El fullRfid de Gallagher viene en hexadecimal ("8000080254AB5D6B"): si tiene
         // letras no es un número de caravana y se descarta.
         if (crudo == null || crudo.any { it.isLetter() }) return null
         val d = crudo.filter { it.isDigit() }
-        return when {
-            d.length == 15 -> d
-            d.length in 13..14 -> d.padStart(15, '0')
-            else -> null
+        if (d.length == 15 && d.startsWith("0320")) return d
+        if (d.length == 14 && d.startsWith("32")) {
+            val conCero = "0$d"
+            if (conCero.startsWith("0320")) return conCero
         }
+        return null
     }
 
     fun fechaLegible(iso: String): String {

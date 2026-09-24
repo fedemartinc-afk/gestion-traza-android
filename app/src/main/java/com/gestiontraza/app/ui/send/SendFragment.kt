@@ -23,6 +23,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.gestiontraza.app.R
 import com.gestiontraza.app.data.ApiClient
+import com.gestiontraza.app.data.ConsultaConReintentos
 import com.gestiontraza.app.data.PendingQueue
 import com.gestiontraza.app.data.SenasaClient
 import com.gestiontraza.app.data.SessionManager
@@ -101,6 +102,9 @@ class SendFragment : Fragment() {
         binding.btnEnviarCierre.setOnClickListener { pedirDte(ModoDte.CIERRE) }
 
         // Guarda la lectura en "Sesiones guardadas en dispositivo", con el nombre que se elija.
+        binding.btnVerSesiones.setOnClickListener {
+            findNavController().navigate(SendFragmentDirections.actionSendToSesiones())
+        }
         binding.btnCrearSesion.setOnClickListener {
             guardarSesionImportada(SessionFileStore(requireContext()), "", "Lectura", caravanas, "caravanas") { nombre ->
                 android.widget.Toast.makeText(
@@ -238,16 +242,16 @@ class SendFragment : Fragment() {
                 return@launch
             }
 
-            val estados = withContext(Dispatchers.IO) {
-                caravanas.map { cod ->
-                    SenasaClient.consultarCaravana(
-                        SenasaClient.senasaBase(session.senasaEnv),
-                        session.wsUsername,
-                        session.wsToken,
-                        cod
-                    )
+            val base = SenasaClient.senasaBase(session.senasaEnv)
+            val estadosPorCod = ConsultaConReintentos.consultar(
+                caravanas,
+                esValido = { it.ok }
+            ) { cod ->
+                withContext(Dispatchers.IO) {
+                    SenasaClient.consultarCaravana(base, session.wsUsername, session.wsToken, cod)
                 }
             }
+            val estados = caravanas.map { estadosPorCod.getValue(it) }
 
             val exitosas = estados.filter { it.ok }.map { it.codigo }
             withContext(Dispatchers.IO) {

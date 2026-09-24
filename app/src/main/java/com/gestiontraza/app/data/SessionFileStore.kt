@@ -31,7 +31,9 @@ class SessionFileStore(context: Context) {
             .ifEmpty { "sesion" }
         val origenLimpio = origen.replace("__", "_")
         val archivo = File(dir, "${System.currentTimeMillis()}__${origenLimpio}__$nombreLimpio.txt")
-        archivo.writeText(contenido.joinToString("\n"))
+        // Corrige espacios sueltos y el "0" inicial perdido en cualquier sesión que se
+        // guarde, sea cual sea el lector o el medio de importación (ver FormatoCaravana).
+        archivo.writeText(contenido.map { FormatoCaravana.normalizarImportada(it) }.joinToString("\n"))
         return archivo
     }
 
@@ -56,7 +58,7 @@ class SessionFileStore(context: Context) {
 
     /** Reemplaza las caravanas de una sesión conservando su nombre, origen y fecha. */
     fun actualizar(archivo: File, contenido: List<String>) {
-        archivo.writeText(contenido.joinToString("\n"))
+        archivo.writeText(contenido.map { FormatoCaravana.normalizarImportada(it) }.joinToString("\n"))
     }
 
     /**

@@ -8,12 +8,19 @@ android {
     namespace 'com.gestiontraza.app'
     compileSdk 34
 
+    // Los tests JVM (testDebugUnitTest) corren sin el Android real: sin esto,
+    // cualquier llamada a android.util.Log u otra clase del framework revienta
+    // con "not mocked" en vez de no hacer nada.
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
     defaultConfig {
         applicationId "com.gestiontraza.app"
         minSdk 26
         targetSdk 34
-        versionCode 9
-        versionName "4.5"
+        versionCode 10
+        versionName "4.6"
     }
 
     buildTypes {

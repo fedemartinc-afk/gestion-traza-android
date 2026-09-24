@@ -1,5 +1,7 @@
 package com.gestiontraza.app.lectores
 
+import com.gestiontraza.app.data.FormatoCaravana
+
 data class SesionLector(
     val id: String,
     val nombre: String,
@@ -104,9 +106,15 @@ class Xrs2Sesiones(private val scp: ScpClient, override val familia: String) : L
                     throw ScpException("Fila fuera de secuencia (esperaba ${recibidas % 10}, llegó $contador): se perdieron datos")
                 }
                 recibidas++
-                val eid = if (iEid >= 0) c.getOrNull(iEid + 1)?.trim().orEmpty() else ""
+                val eidCrudo = if (iEid >= 0) c.getOrNull(iEid + 1)?.trim().orEmpty() else ""
                 val vid = if (iVid >= 0) c.getOrNull(iVid + 1)?.trim().orEmpty() else ""
-                val codigo = eid.ifEmpty { vid }
+                // El EID es el identificador electrónico que trae el lector: se usa siempre
+                // que venga informado, sea una caravana SENASA (0320…) u otro estándar (ej.
+                // 982…, de otro tipo de caravaneo electrónico) — no se reemplaza por el VID
+                // (número visual, de 3 a 5 caracteres) solo porque no empiece con 0320. Se le
+                // corrigen los espacios sueltos y, si le falta, el primer cero. El VID se usa
+                // únicamente cuando no hay EID.
+                val codigo = if (eidCrudo.isNotEmpty()) FormatoCaravana.normalizarImportada(eidCrudo) else vid
                 if (codigo.isNotEmpty()) codigos.add(codigo)
             }
         }

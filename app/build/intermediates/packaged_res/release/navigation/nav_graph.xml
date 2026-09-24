@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/configFragment">
+
+    <!-- 1. Ingreso: escanear QR de la web -->
+    <fragment
+        android:id="@+id/configFragment"
+        android:name="com.gestiontraza.app.ui.config.ConfigFragment"
+        android:label="Config">
+        <!-- true = se está agregando una cuenta nueva, no editando la activa -->
+        <argument
+            android:name="agregarCuenta"
+            app:argType="boolean"
+            android:defaultValue="false"/>
+        <action
+            android:id="@+id/action_config_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/configFragment"
+            app:popUpToInclusive="true"/>
+        <action
+            android:id="@+id/action_config_to_tipoSesion"
+            app:destination="@id/tipoSesionFragment"
+            app:popUpTo="@id/configFragment"
+            app:popUpToInclusive="true"/>
+        <action
+            android:id="@+id/action_config_to_cuentas"
+            app:destination="@id/cuentasFragment"/>
+        <action
+            android:id="@+id/action_config_to_config"
+            app:destination="@id/configFragment"/>
+    </fragment>
+
+    <!-- Lista de cuentas guardadas en el dispositivo: elegir o agregar una -->
+    <fragment
+        android:id="@+id/cuentasFragment"
+        android:name="com.gestiontraza.app.ui.cuentas.CuentasFragment"
+        android:label="Mis cuentas">
+        <action
+            android:id="@+id/action_cuentas_to_config"
+            app:destination="@id/configFragment"/>
+        <action
+            android:id="@+id/action_cuentas_to_tipoSesion"
+            app:destination="@id/tipoSesionFragment"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true"/>
+    </fragment>
+
+    <!-- 2. Elección de perfil: productor agropecuario o consignatario -->
+    <fragment
+        android:id="@+id/tipoSesionFragment"
+        android:name="com.gestiontraza.app.ui.tiposesion.TipoSesionFragment"
+        android:label="Perfil">
+        <action
+            android:id="@+id/action_tipoSesion_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/tipoSesionFragment"
+            app:popUpToInclusive="true"/>
+    </fragment>
+
+    <!-- 3. Inicio: muestra el panel del perfil activo -->
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.gestiontraza.app.ui.home.HomeFragment"
+        android:label="Inicio">
+        <action
+            android:id="@+id/action_home_to_reading"
+            app:destination="@id/readingFragment"/>
+        <action
+            android:id="@+id/action_home_to_config"
+            app:destination="@id/configFragment"/>
+        <action
+            android:id="@+id/action_home_to_registrar"
+            app:destination="@id/registrarDispositivosFragment"/>
+        <action
+            android:id="@+id/action_home_to_importar"
+            app:destination="@id/importarHomeFragment"/>
+    </fragment>
+
+    <!-- Lectura de caravanas: común a ambos perfiles.
+         mode vacío = consignatario (sigue al envío); con mode = módulo del productor. -->
+    <fragment
+        android:id="@+id/readingFragment"
+        android:name="com.gestiontraza.app.ui.reading.ReadingFragment"
+        android:label="Lectura">
+        <argument
+            android:name="mode"
+            app:argType="string"
+            android:defaultValue=""/>
+        <argument
+            android:name="titulo"
+            app:argType="string"
+            android:defaultValue=""/>
+        <action
+            android:id="@+id/action_reading_to_send"
+            app:destination="@id/sendFragment"/>
+        <action
+            android:id="@+id/action_reading_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true"/>
+        <action
+            android:id="@+id/action_reading_to_verificarOrigen"
+            app:destination="@id/verificarOrigenFragment"/>
+        <action
+            android:id="@+id/action_reading_to_compararTri"
+            app:destination="@id/compararTriFragment"/>
+        <action
+            android:id="@+id/action_reading_to_estadoTri"
+            app:destination="@id/estadoTRIFragment"/>
+        <action
+            android:id="@+id/action_reading_to_estadoPredespacho"
+            app:destination="@id/estadoPredespachoFragment"/>
+        <action
+            android:id="@+id/action_reading_to_ubicacionActual"
+            app:destination="@id/ubicacionActualFragment"/>
+        <action
+            android:id="@+id/action_reading_to_ordenarOrigen"
+            app:destination="@id/ordenarOrigenFragment"/>
+        <action
+            android:id="@+id/action_reading_to_hub"
+            app:destination="@id/hubFragment"/>
+    </fragment>
+
+    <!-- ===== Perfil consignatario ===== -->
+    <fragment
+        android:id="@+id/sendFragment"
+        android:name="com.gestiontraza.app.ui.send.SendFragment"
+        android:label="Enviar">
+        <argument
+            android:name="caravanas"
+            app:argType="string"/>
+        <action
+            android:id="@+id/action_send_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true"/>
+        <action
+            android:id="@+id/action_send_to_enviarWeb"
+            app:destination="@id/enviarWebFragment"/>
+        <action
+            android:id="@+id/action_send_to_compararTri"
+            app:destination="@id/compararTriFragment"/>
+        <action
+            android:id="@+id/action_send_to_ordenarOrigen"
+            app:destination="@id/ordenarOrigenFragment"/>
+    </fragment>
+
+    <!-- Segunda pantalla de "Enviar a usuario web": DTe(s) y mensaje opcional -->
+    <fragment
+        android:id="@+id/enviarWebFragment"
+        android:name="com.gestiontraza.app.ui.send.EnviarWebFragment"
+        android:label="Enviar a usuario web">
+        <argument
+            android:name="caravanas"
+            app:argType="string"/>
+    </fragment>
+
+    <!-- ===== Módulos del perfil productor (Comparar vs TRI lo usan ambos) ===== -->
+    <fragment
+        android:id="@+id/compararTriFragment"
+        android:name="com.gestiontraza.app.ui.comparar_tri.CompararTRIFragment"
+        android:label="Comparar vs TRI">
+        <argument
+            android:name="caravanas"
+            app:argType="string"/>
+        <argument
+            android:name="dte"
+            app:argType="string"
+            android:defaultValue=""/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/verificarOrigenFragment"
+        android:name="com.gestiontraza.app.ui.verificar_origen.VerificarOrigenFragment"
+        android:label="Verificar Origen">
+        <argument
+            android:name="caravanas"
+            app:argType="string"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/estadoTRIFragment"
+        android:name="com.gestiontraza.app.ui.estado_tri.EstadoTRIFragment"
+        android:label="Estado para TRI">
+        <argument
+            android:name="caravanas"
+            app:argType="string"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/estadoPredespachoFragment"
+        android:name="com.gestiontraza.app.ui.estado_predespacho.EstadoPredespachoFragment"
+        android:label="Estado para Predespacho">
+        <argument
+            android:name="caravanas"
+            app:argType="string"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/registrarDispositivosFragment"
+        android:name="com.gestiontraza.app.ui.registrar.RegistrarDispositivosFragment"
+        android:label="Registrar Dispositivos"/>
+
+    <!-- Consulta masiva que muestra donde esta hoy cada caravana (perfil consignatario) -->
+    <fragment
+        android:id="@+id/ubicacionActualFragment"
+        android:name="com.gestiontraza.app.ui.ubicacion.UbicacionActualFragment"
+        android:label="Ubicación actual">
+        <argument
+            android:name="caravanas"
+            app:argType="string"/>
+    </fragment>
+
+    <!-- Agrupa las caravanas leídas según el origen de uno o más DTe (ambos perfiles) -->
+    <fragment
+        android:id="@+id/ordenarOrigenFragment"
+        android:name="com.gestiontraza.app.ui.ordenar_origen.OrdenarOrigenFragment"
+        android:label="Ordenar por Origen">
+        <argument
+            android:name="caravanas"
+            app:argType="string"/>
+        <!-- DTe(s) ya cargados en la pantalla anterior (uno por línea); vacío si no venían precargados -->
+        <argument
+            android:name="dtes"
+            app:argType="string"
+            android:defaultValue=""/>
+    </fragment>
+
+    <!-- Hub: elegir qué hacer con una tanda de caravanas (lectura recién hecha,
+         o una sesión importada). Estado TRI/Predespacho solo se muestran para
+         el perfil productor (ver HubFragment). -->
+    <fragment
+        android:id="@+id/hubFragment"
+        android:name="com.gestiontraza.app.ui.hub.HubFragment"
+        android:label="Caravanas leídas">
+        <argument
+            android:name="caravanas"
+            app:argType="string"/>
+        <action
+            android:id="@+id/action_hub_to_verificarOrigen"
+            app:destination="@id/verificarOrigenFragment"/>
+        <action
+            android:id="@+id/action_hub_to_compararTri"
+            app:destination="@id/compararTriFragment"/>
+        <action
+            android:id="@+id/action_hub_to_ordenarOrigen"
+            app:destination="@id/ordenarOrigenFragment"/>
+        <action
+            android:id="@+id/action_hub_to_ubicacionActual"
+            app:destination="@id/ubicacionActualFragment"/>
+        <action
+            android:id="@+id/action_hub_to_estadoTri"
+            app:destination="@id/estadoTRIFragment"/>
+        <action
+            android:id="@+id/action_hub_to_estadoPredespacho"
+            app:destination="@id/estadoPredespachoFragment"/>
+    </fragment>
+
+    <!-- ===== Importar sesiones de lectores RFID (ambos perfiles) ===== -->
+    <fragment
+        android:id="@+id/importarHomeFragment"
+        android:name="com.gestiontraza.app.ui.importar.home.ImportarHomeFragment"
+        android:label="Importar sesiones">
+        <action
+            android:id="@+id/action_importarHome_to_conectar"
+            app:destination="@id/importarConectarFragment"/>
+        <action
+            android:id="@+id/action_importarHome_to_sesiones"
+            app:destination="@id/importarSesionesFragment"/>
+        <action
+            android:id="@+id/action_importarHome_to_lector"
+            app:destination="@id/importarLectorFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/importarLectorFragment"
+        android:name="com.gestiontraza.app.ui.importar.lector.ImportarLectorFragment"
+        android:label="Sesiones del lector">
+        <action
+            android:id="@+id/action_importarLector_to_sesiones"
+            app:destination="@id/importarSesionesFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/importarConectarFragment"
+        android:name="com.gestiontraza.app.ui.importar.conectar.ImportarConectarFragment"
+        android:label="Conectar lector">
+        <action
+            android:id="@+id/action_importarConectar_to_sesiones"
+            app:destination="@id/importarSesionesFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/importarSesionesFragment"
+        android:name="com.gestiontraza.app.ui.importar.sesiones.ImportarSesionesFragment"
+        android:label="Sesiones guardadas">
+        <action
+            android:id="@+id/action_importarSesiones_to_detalle"
+            app:destination="@id/importarDetalleSesionFragment"/>
+        <action
+            android:id="@+id/action_importarSesiones_to_editar"
+            app:destination="@id/importarEditarSesionFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/importarEditarSesionFragment"
+        android:name="com.gestiontraza.app.ui.importar.editar.ImportarEditarSesionFragment"
+        android:label="Editar sesión">
+        <argument
+            android:name="rutaArchivo"
+            app:argType="string"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/importarDetalleSesionFragment"
+        android:name="com.gestiontraza.app.ui.importar.detalle.ImportarDetalleSesionFragment"
+        android:label="Sesión">
+        <argument
+            android:name="rutaArchivo"
+            app:argType="string"/>
+        <action
+            android:id="@+id/action_importarDetalle_to_hub"
+            app:destination="@id/hubFragment"/>
+    </fragment>
+
+</navigation>

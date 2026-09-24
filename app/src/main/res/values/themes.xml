@@ -1,5 +1,12 @@
 <resources>
-    <style name="Theme.GestionTraza" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+    <!-- Light, no DayNight: la app está diseñada solo con colores claros (fondos
+         blancos fijados a mano en los layouts). Con DayNight, cuando el sistema
+         está en modo oscuro los campos y botones sin color puesto a mano (ej. un
+         EditText liso) tomaban letra clara del tema oscuro sobre esos fondos
+         blancos y quedaban ilegibles (letra blanca sobre blanco, recuadros
+         grises en vez de blancos). Forzar el tema claro evita eso en toda la app
+         de una sola vez, sin depender del modo oscuro del sistema del usuario. -->
+    <style name="Theme.GestionTraza" parent="Theme.MaterialComponents.Light.DarkActionBar">
         <item name="colorPrimary">@color/verde_oscuro</item>
         <item name="colorPrimaryVariant">@color/verde_medio</item>
         <item name="colorOnPrimary">@color/blanco</item>

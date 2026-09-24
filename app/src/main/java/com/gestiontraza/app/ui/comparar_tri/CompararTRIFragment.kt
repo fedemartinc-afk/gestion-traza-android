@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.LocationServices
 import com.gestiontraza.app.R
 import com.gestiontraza.app.data.ApiClient
+import com.gestiontraza.app.data.ConsultaConReintentos
 import com.gestiontraza.app.data.SenasaClient
 import com.gestiontraza.app.data.SessionManager
 import com.gestiontraza.app.databinding.FragmentCompararTriBinding
@@ -47,6 +48,11 @@ class CompararTRIFragment : Fragment() {
     enum class Tipo { VERDE, ROJO, AZUL }
 
     data class ResultItem(val codigo: String, val tipo: Tipo)
+
+    private var todosResultados: List<ResultItem> = emptyList()
+
+    /** null = todos; si no, solo se muestra ese tipo de resultado. */
+    private var filtroTipo: Tipo? = null
 
     private data class DatosCaravana(val renspa: String, val sexo: String, val ok: Boolean)
     private val datosParaContadores = mutableListOf<DatosCaravana>()
@@ -88,6 +94,7 @@ class CompararTRIFragment : Fragment() {
 
         setupTecladoToggleDte()
 
+        binding.btnFiltroTipo.setOnClickListener { mostrarSelectorTipo() }
         binding.btnEnviarWeb.setOnClickListener { confirmarYEnviarAWeb(dteActual()) }
         binding.btnEnviarWebPost.setOnClickListener { confirmarYEnviarAWeb(dteActual()) }
 
@@ -224,11 +231,22 @@ class CompararTRIFragment : Fragment() {
         binding.panelContadores.visibility = View.GONE
         val base = SenasaClient.senasaBase(session.senasaEnv)
         binding.tvProgreso.visibility = View.VISIBLE
-        caravanas.forEachIndexed { idx, caravana ->
-            binding.tvProgreso.text = "Consultando datos ${idx + 1} de ${caravanas.size}…"
-            val estado = withContext(Dispatchers.IO) {
-                SenasaClient.consultarCaravana(base, session.wsUsername, session.wsToken, caravana)
+        val estados = ConsultaConReintentos.consultar(
+            caravanas,
+            onProgreso = { actual, total, pasada ->
+                binding.tvProgreso.text = if (pasada == 1)
+                    "Consultando datos $actual de $total…"
+                else
+                    "Consultando datos $actual de $total… (reintento ${pasada - 1} de ${ConsultaConReintentos.MAX_REINTENTOS})"
+            },
+            esValido = { it.ok }
+        ) { cod ->
+            withContext(Dispatchers.IO) {
+                SenasaClient.consultarCaravana(base, session.wsUsername, session.wsToken, cod)
             }
+        }
+        caravanas.forEach { caravana ->
+            val estado = estados.getValue(caravana)
             datosParaContadores.add(DatosCaravana(estado.renspaActual, estado.sexo, estado.ok))
         }
         binding.tvProgreso.visibility = View.GONE
@@ -261,7 +279,37 @@ class CompararTRIFragment : Fragment() {
         binding.panelContadores.visibility = if (datosParaContadores.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun mostrarResultados(resultados: List<ResultItem>) {
+    private fun mostrarSelectorTipo() {
+        val tipos = arrayOf<Tipo?>(null, Tipo.ROJO, Tipo.AZUL, Tipo.VERDE)
+        val etiquetas = arrayOf(
+            "Todas (${todosResultados.size})",
+            "✗ Rojas (${todosResultados.count { it.tipo == Tipo.ROJO }})",
+            "+ Azules (${todosResultados.count { it.tipo == Tipo.AZUL }})",
+            "✓ Verdes (${todosResultados.count { it.tipo == Tipo.VERDE }})"
+        )
+        AlertDialog.Builder(requireContext())
+            .setTitle("Filtrar resultados")
+            .setSingleChoiceItems(etiquetas, tipos.indexOf(filtroTipo)) { d, which ->
+                filtroTipo = tipos[which]
+                mostrarResultados(todosResultados)
+                d.dismiss()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun mostrarResultados(sinOrdenar: List<ResultItem>) {
+        todosResultados = sinOrdenar
+        // Rojas y azules (lo que no coincide) primero, verdes al final.
+        val ordenados = sinOrdenar.sortedBy { if (it.tipo == Tipo.VERDE) 1 else 0 }
+        val resultados = filtroTipo?.let { f -> ordenados.filter { it.tipo == f } } ?: ordenados
+        binding.btnFiltroTipo.visibility = if (sinOrdenar.isEmpty()) View.GONE else View.VISIBLE
+        binding.btnFiltroTipo.text = when (filtroTipo) {
+            null -> "🔎  Filtrar resultados"
+            Tipo.ROJO -> "🔎  Filtro: solo rojas ▾"
+            Tipo.AZUL -> "🔎  Filtro: solo azules ▾"
+            Tipo.VERDE -> "🔎  Filtro: solo verdes ▾"
+        }
         val adapter = object : ListAdapter<ResultItem, RecyclerView.ViewHolder>(
             object : DiffUtil.ItemCallback<ResultItem>() {
                 override fun areItemsTheSame(a: ResultItem, b: ResultItem) = a.codigo == b.codigo

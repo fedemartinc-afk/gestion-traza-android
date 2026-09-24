@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/tvDialogTitulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Número de DTe"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#1a1a18"/>
+
+    <TextView
+        android:id="@+id/tvDialogAyuda"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ingresá o escaneá el DTe y elegí qué hacer."
+        android:textSize="12sp"
+        android:textColor="@color/gris_texto"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="12dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginEnd="6dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etDteUnico"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Número de DTe"
+                android:inputType="number"
+                android:fontFamily="monospace"
+                android:textSize="15sp"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnToggleTecladoUnico"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ABC"
+            android:textSize="11sp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:cornerRadius="8dp"
+            android:layout_marginEnd="6dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEscanearUnico"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📷"
+            android:textSize="15sp"
+            style="@style/BtnSecondary"
+            app:cornerRadius="8dp"
+            android:minWidth="0dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"/>
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDialogVerificar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="🔍  Verificar origen"
+        style="@style/BtnPrimary"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDialogEnviarWeb"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Enviar a usuario web"
+        style="@style/BtnPrimary"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDialogCierre"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="Enviar cierre a DT-e"
+        android:visibility="gone"
+        style="@style/BtnDanger"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDialogCancelar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Cancelar"
+        style="@style/Widget.MaterialComponents.Button.TextButton"/>
+
+</LinearLayout>

@@ -21,9 +21,17 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.gestiontraza.app.R
 import com.gestiontraza.app.data.ApiClient
+import com.gestiontraza.app.data.ConsultaConReintentos
 import com.gestiontraza.app.data.SenasaClient
 import com.gestiontraza.app.data.SessionManager
 import com.gestiontraza.app.databinding.FragmentEstadoPredespachoBinding
+import com.gestiontraza.app.ui.estado.FilaEstadoCaravana
+import com.gestiontraza.app.ui.estado.aplicarMascaraRenspa
+import com.gestiontraza.app.ui.estado.compartirEstadoCaravanas
+import com.gestiontraza.app.ui.estado.mostrarDialogoAgregarCaravanas
+import com.gestiontraza.app.ui.estado.mostrarSelectorValidez
+import com.gestiontraza.app.ui.estado.textoBotonFiltroValidez
+import com.gestiontraza.app.ui.estado.textoValidezColoreado
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -49,6 +57,9 @@ class EstadoPredespachoFragment : Fragment() {
 
     private val resultados = mutableListOf<ResultItem>()
 
+    /** null = todas, true = solo válidas, false = solo inválidas. */
+    private var filtroValidez: Boolean? = null
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, saved: Bundle?): View {
         _binding = FragmentEstadoPredespachoBinding.inflate(inflater, container, false)
         return binding.root
@@ -61,6 +72,7 @@ class EstadoPredespachoFragment : Fragment() {
         caravanas = (0 until arr.length()).map { arr.getString(it) }.toMutableList()
         binding.tvContadorBar.text = "${caravanas.size} caravanas"
 
+        binding.etRenspa.aplicarMascaraRenspa()
         if (session.ultimoRenspa.isNotBlank()) binding.etRenspa.setText(session.ultimoRenspa)
 
         mostrarResultados(emptyList())
@@ -70,6 +82,27 @@ class EstadoPredespachoFragment : Fragment() {
         binding.btnGps.setOnClickListener { obtenerUbicacion() }
         binding.btnEnviarPredespacho.setOnClickListener { enviarPredespachoASenasa() }
         binding.btnEnviarWeb.setOnClickListener { confirmarYEnviarAWeb() }
+        binding.tvValidasBar.setOnClickListener { compartir(soloValidas = true) }
+        binding.tvInvalidasBar.setOnClickListener { compartir(soloValidas = false) }
+        binding.btnCompartirEstado.setOnClickListener { compartir(soloValidas = null) }
+        binding.btnFiltroValidez.setOnClickListener {
+            val validas = resultados.count { it.ok }
+            mostrarSelectorValidez(filtroValidez, validas, resultados.size - validas) {
+                filtroValidez = it
+                mostrarResultados(resultados.toList())
+            }
+        }
+        binding.btnAgregarCaravana.setOnClickListener {
+            mostrarDialogoAgregarCaravanas({ caravanas }) { agregarYVerificar(it) }
+        }
+    }
+
+    private fun compartir(soloValidas: Boolean?) {
+        compartirEstadoCaravanas(
+            "Estado para Predespacho",
+            resultados.map { FilaEstadoCaravana(it.codigo, it.ok, it.razon) },
+            soloValidas
+        )
     }
 
     /** Si no se cargó el RENSPA, se avisa antes de mandar el mensaje a la web —
@@ -96,18 +129,37 @@ class EstadoPredespachoFragment : Fragment() {
         binding.panelEnviar.visibility = View.GONE
 
         lifecycleScope.launch {
+            val items = consultarItems(caravanas.toList(), renspa)
             resultados.clear()
-            caravanas.forEachIndexed { idx, caravana ->
-                withContext(Dispatchers.Main) {
-                    binding.tvProgreso.text = "Verificando ${idx + 1} de ${caravanas.size}..."
-                }
-                val estado = withContext(Dispatchers.IO) {
-                    SenasaClient.consultarCaravana(SenasaClient.senasaBase(session.senasaEnv), session.wsUsername, session.wsToken, caravana)
-                }
-                if (!estado.ok) {
-                    resultados.add(ResultItem(caravana, false, estado.error.ifBlank { "Sin datos" }, datosOk = false))
-                    return@forEachIndexed
-                }
+            resultados.addAll(items)
+            setVerifLoading(false)
+            mostrarResultados(resultados.toList())
+            binding.panelEnviar.visibility = View.VISIBLE
+        }
+    }
+
+    private suspend fun consultarItems(codigos: List<String>, renspa: String): List<ResultItem> {
+        val base = SenasaClient.senasaBase(session.senasaEnv)
+        val estados = ConsultaConReintentos.consultar(
+            codigos,
+            onProgreso = { actual, total, pasada ->
+                binding.tvProgreso.text = if (pasada == 1)
+                    "Verificando $actual de $total..."
+                else
+                    "Verificando $actual de $total... (reintento ${pasada - 1} de ${ConsultaConReintentos.MAX_REINTENTOS})"
+            },
+            esValido = { it.ok }
+        ) { cod ->
+            withContext(Dispatchers.IO) {
+                SenasaClient.consultarCaravana(base, session.wsUsername, session.wsToken, cod)
+            }
+        }
+
+        val items = codigos.map { caravana ->
+            val estado = estados.getValue(caravana)
+            if (!estado.ok) {
+                ResultItem(caravana, false, estado.error.ifBlank { "Sin datos" }, datosOk = false)
+            } else {
                 val problemas = buildList {
                     if (estado.bloqueada)   add("Bloqueada")
                     if (estado.deBaja)      add("De baja")
@@ -121,23 +173,35 @@ class EstadoPredespachoFragment : Fragment() {
                         if (dias in 1..40) add("Cuarentenada ($dias días desde ingreso)")
                     }
                 }
-                resultados.add(ResultItem(
+                ResultItem(
                     codigo  = caravana,
                     ok      = problemas.isEmpty(),
                     razon   = problemas.joinToString(", "),
                     renspa  = estado.renspaActual,
                     sexo    = estado.sexo,
                     datosOk = true
-                ))
+                )
             }
-            val exitosas = resultados.filter { it.datosOk }.map { it.codigo }
-            withContext(Dispatchers.IO) {
-                ApiClient.registrarConsultas(session.baseUrl(), session.token, exitosas)
-            }
+        }
+        val exitosas = items.filter { it.datosOk }.map { it.codigo }
+        withContext(Dispatchers.IO) {
+            ApiClient.registrarConsultas(session.baseUrl(), session.token, exitosas)
+        }
+        return items
+    }
 
+    /** Suma caravanas nuevas a la lista ya verificada y consulta solo esas. */
+    private fun agregarYVerificar(nuevas: List<String>) {
+        val renspa = binding.etRenspa.text?.toString()?.trim() ?: ""
+        if (renspa.length < 17) { showToast("Ingresá el RENSPA completo"); return }
+        setVerifLoading(true)
+        lifecycleScope.launch {
+            val items = consultarItems(nuevas, renspa)
+            caravanas.addAll(nuevas)
+            binding.tvContadorBar.text = "${caravanas.size} caravanas"
+            resultados.addAll(items)
             setVerifLoading(false)
-            mostrarResultados(resultados)
-            binding.panelEnviar.visibility = View.VISIBLE
+            mostrarResultados(resultados.toList())
         }
     }
 
@@ -165,7 +229,15 @@ class EstadoPredespachoFragment : Fragment() {
 
     private fun normalizarRenspa(r: String) = r.filter { it.isLetterOrDigit() }.uppercase()
 
-    private fun mostrarResultados(items: List<ResultItem>) {
+    private fun mostrarResultados(itemsSinOrdenar: List<ResultItem>) {
+        // Las que no cumplen los requisitos van primero, para que se vean sin
+        // tener que desplazarse; entre sí conservan el orden en que llegaron.
+        val items = itemsSinOrdenar.sortedBy { if (it.ok) 1 else 0 }
+        val visibles = when (filtroValidez) {
+            null -> items
+            true -> items.filter { it.ok }
+            false -> items.filter { !it.ok }
+        }
         val adapter = object : ListAdapter<ResultItem, RecyclerView.ViewHolder>(
             object : DiffUtil.ItemCallback<ResultItem>() {
                 override fun areItemsTheSame(a: ResultItem, b: ResultItem) = a.codigo == b.codigo
@@ -209,9 +281,35 @@ class EstadoPredespachoFragment : Fragment() {
         }
         binding.recyclerResultados.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerResultados.adapter = adapter
-        adapter.submitList(items.toList())
+        adapter.submitList(visibles)
 
         actualizarContadores(items)
+        actualizarContadoresValidez(items)
+    }
+
+    /** Contadores de válidas/inválidas en la barra superior, en lugar del total simple.
+     *  Tocar cada uno comparte directamente ese grupo. */
+    @SuppressLint("SetTextI18n")
+    private fun actualizarContadoresValidez(items: List<ResultItem>) {
+        if (items.isEmpty()) {
+            binding.llContadoresBar.visibility = View.GONE
+            binding.tvContadorBar.visibility = View.VISIBLE
+            binding.btnCompartirEstado.visibility = View.GONE
+            binding.btnAgregarCaravana.visibility = View.GONE
+            binding.btnFiltroValidez.visibility = View.GONE
+            return
+        }
+        val validas = items.count { it.ok }
+        val invalidas = items.size - validas
+        binding.tvContadorBar.visibility = View.GONE
+        binding.llContadoresBar.visibility = View.VISIBLE
+        binding.tvValidasBar.text = "✓ $validas"
+        binding.tvInvalidasBar.text = "✗ $invalidas"
+        binding.btnCompartirEstado.visibility = View.VISIBLE
+        binding.btnAgregarCaravana.visibility = View.VISIBLE
+        binding.btnFiltroValidez.visibility = View.VISIBLE
+        binding.btnFiltroValidez.text = textoBotonFiltroValidez(filtroValidez)
+        binding.tvValidezCount.text = textoValidezColoreado(requireContext(), validas, invalidas)
     }
 
     /** Entidades (RENSPA/feria) distintas y desglose de sexo, sobre las caravanas con datos de SENASA. */
@@ -237,7 +335,7 @@ class EstadoPredespachoFragment : Fragment() {
 
     private fun enviarPredespachoASenasa() {
         val renspa = binding.etRenspa.text?.toString()?.trim() ?: ""
-        val numero = binding.etNumeroLote.text?.toString()?.trim()?.ifBlank { "LOTE :" } ?: "LOTE :"
+        val numero = "LOTE : " + java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
         val lat = binding.etLat.text?.toString()?.trim()?.toDoubleOrNull()
         val lon = binding.etLon.text?.toString()?.trim()?.toDoubleOrNull()
         val especie = caravanas.firstOrNull()?.let {
@@ -245,15 +343,35 @@ class EstadoPredespachoFragment : Fragment() {
         } ?: "01"
         val caravanasSoloOk = if (resultados.isEmpty()) caravanas
                               else resultados.filter { it.ok }.map { it.codigo }
+        val invalidas = if (resultados.isEmpty()) 0 else resultados.size - caravanasSoloOk.size
         if (caravanasSoloOk.isEmpty()) { showToast("Sin caravanas válidas para enviar"); return }
         if (session.wsUsername.isEmpty()) { showToast("Sin credenciales SENASA"); return }
         if (lat == null || lon == null) { showToast("Falta la ubicación — presioná GPS antes de enviar"); return }
+
+        if (invalidas > 0) {
+            AlertDialog.Builder(requireContext())
+                .setTitle("Caravanas inválidas")
+                .setMessage("Hay $invalidas caravana(s) inválida(s). ¿Querés enviar el lote completo de todas formas?")
+                .setPositiveButton("Sí, enviar todo") { _, _ ->
+                    hacerEnvioPredespacho(renspa, numero, especie, resultados.map { it.codigo }, lat, lon)
+                }
+                .setNegativeButton("No, solo válidas") { _, _ ->
+                    showToast("Se enviarán solo las ${caravanasSoloOk.size} caravana(s) válida(s)")
+                    hacerEnvioPredespacho(renspa, numero, especie, caravanasSoloOk, lat, lon)
+                }
+                .show()
+        } else {
+            hacerEnvioPredespacho(renspa, numero, especie, caravanasSoloOk, lat, lon)
+        }
+    }
+
+    private fun hacerEnvioPredespacho(renspa: String, numero: String, especie: String, codigos: List<String>, lat: Double, lon: Double) {
         setResultLoading(true)
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
                 SenasaClient.enviarTRI(
                     SenasaClient.senasaBase(session.senasaEnv), session.wsUsername, session.wsToken,
-                    renspa, especie, numero, caravanasSoloOk, lat, lon
+                    renspa, especie, numero, codigos, lat, lon
                 )
             }
             setResultLoading(false)
@@ -274,6 +392,7 @@ class EstadoPredespachoFragment : Fragment() {
         if (loc != null) {
             binding.etLat.setText(loc.latitude.toString())
             binding.etLon.setText(loc.longitude.toString())
+            binding.btnGps.text = "📍  GPS ✓"
         } else {
             showToast("No se pudo obtener la ubicación")
         }
