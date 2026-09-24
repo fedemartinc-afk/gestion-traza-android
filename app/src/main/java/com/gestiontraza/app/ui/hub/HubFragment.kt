@@ -89,10 +89,17 @@ class HubFragment : Fragment() {
         val esProductor = session.tipoSesionActual == "productor"
         binding.btnEstadoTri.visibility = if (esProductor) View.VISIBLE else View.GONE
         binding.btnEstadoPredespacho.visibility = if (esProductor) View.VISIBLE else View.GONE
-        // Enviar a DT-e (cierre): igual que en el perfil consignatario, solo para productor.
-        binding.btnEnviarCierre.visibility = if (esProductor) View.VISIBLE else View.GONE
-        binding.tvCierreNota.visibility = if (esProductor) View.VISIBLE else View.GONE
-        if (esProductor) fetchLocation()
+        // Enviar a DT-e (cierre): en ambos perfiles. En consignatario va debajo de
+        // "Ver sesiones en este dispositivo" (igual que en la pantalla de lectura).
+        if (!esProductor) {
+            val padre = binding.btnVerSesiones.parent as ViewGroup
+            padre.removeView(binding.btnEnviarCierre)
+            padre.removeView(binding.tvCierreNota)
+            val pos = padre.indexOfChild(binding.btnVerSesiones) + 1
+            padre.addView(binding.btnEnviarCierre, pos)
+            padre.addView(binding.tvCierreNota, pos + 1)
+        }
+        fetchLocation()
 
         binding.btnVerificarOrigen.setOnClickListener {
             findNavController().navigate(HubFragmentDirections.actionHubToVerificarOrigen(caravanasJson))
