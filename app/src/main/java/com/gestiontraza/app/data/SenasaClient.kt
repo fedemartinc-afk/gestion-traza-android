@@ -121,7 +121,11 @@ object SenasaClient {
             val data = j.optJSONObject("data")
                 ?: return EstadoCaravana(codigo = caravana, ok = false, renspaActual = "", bloqueada = false, deBaja = false, reemplazada = false, excluidaUE = false, error = "Sin datos")
             val entidad = data.optJSONObject("entidadActual")
-            val renspa = entidad?.optString("codigo") ?: entidad?.optString("renspa") ?: ""
+            // optString devuelve "" (no null) si falta la clave, y "null" si viene null: se
+            // prueba cada campo y se toma el primero con contenido (igual que la web).
+            fun texto(o: JSONObject?, k: String) =
+                if (o == null || o.isNull(k)) "" else o.optString(k, "").trim()
+            val renspa = texto(entidad, "codigo").ifBlank { texto(entidad, "renspa") }
             val fechaIngreso = entidad?.optString("fechaIngreso")?.ifBlank { null }
                 ?: entidad?.optString("fechaEntrada")?.ifBlank { null }
                 ?: data.optString("fechaIngreso")?.ifBlank { null }

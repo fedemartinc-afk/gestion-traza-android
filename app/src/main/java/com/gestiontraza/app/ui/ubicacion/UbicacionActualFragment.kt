@@ -114,7 +114,9 @@ class UbicacionActualFragment : Fragment() {
                     else
                         "Consultando $actual de $total… (reintento ${pasada - 1} de ${ConsultaConReintentos.MAX_REINTENTOS})"
                 },
-                esValido = { it.ok }
+                // Una respuesta "ok" sin RENSPA también se reintenta: SENASA a veces la
+                // devuelve incompleta.
+                esValido = { it.ok && it.renspaActual.isNotBlank() }
             ) { caravana ->
                 val estado = withContext(Dispatchers.IO) {
                     SenasaClient.consultarCaravana(base, session.wsUsername, session.wsToken, caravana)
@@ -157,12 +159,12 @@ class UbicacionActualFragment : Fragment() {
     }
 
     private fun reintentarFallidas() {
-        val fallidas = resultados.filter { !it.ok }.map { it.codigo }
+        val fallidas = resultados.filter { !it.ok || it.renspa.isBlank() }.map { it.codigo }
         if (fallidas.isNotEmpty()) consultar(fallidas)
     }
 
     private fun actualizarResumen() {
-        val ok      = resultados.count { it.ok }
+        val ok      = resultados.count { it.ok && it.renspa.isNotBlank() }
         val fallidas = resultados.size - ok
         if (fallidas == 0) {
             showBanner(true, "✓  $ok caravana(s) ubicada(s)")
