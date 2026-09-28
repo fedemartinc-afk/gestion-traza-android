@@ -95,8 +95,14 @@ class ImportarHomeFragment : Fragment() {
                         esXlsAntiguo = true
                         emptyList()
                     }
+                    // .txt/.csv: el lector suele agregar fecha/hora y columnas vacías
+                    // después de la caravana separadas por coma (ej. Tru-Test XRS2 "032
+                    // 010030479031,,2026-09-23,17:08:19,,,") — solo importa el primer
+                    // campo, que es el código.
                     else ->
-                        BufferedReader(InputStreamReader(pushback)).readLines().filter { it.isNotBlank() }
+                        BufferedReader(InputStreamReader(pushback)).readLines()
+                            .map { it.substringBefore(',').trim() }
+                            .filter { it.isNotBlank() }
                 }
             } ?: emptyList()
         } catch (e: Exception) {
