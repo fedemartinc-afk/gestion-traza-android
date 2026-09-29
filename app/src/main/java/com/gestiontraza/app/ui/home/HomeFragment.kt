@@ -2,12 +2,18 @@ package com.gestiontraza.app.ui.home
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -17,7 +23,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.gestiontraza.app.R
 import com.gestiontraza.app.bluetooth.BtConnectionViewModel
+import com.gestiontraza.app.data.ActualizacionChecker
+import com.gestiontraza.app.data.ActualizacionInfo
 import com.gestiontraza.app.data.ApiClient
+import com.gestiontraza.app.data.ApkDownloader
 import com.gestiontraza.app.data.PendingQueue
 import com.gestiontraza.app.data.SessionManager
 import com.gestiontraza.app.databinding.FragmentHomeBinding
@@ -120,6 +129,89 @@ class HomeFragment : Fragment() {
         }
 
         setupModulosProductor()
+        verificarActualizacionDisponible()
+    }
+
+    /** Se avisa una sola vez por apertura de la app, no cada vez que se vuelve a Inicio. */
+    private fun verificarActualizacionDisponible() {
+        if (yaVerificoActualizacion) return
+        yaVerificoActualizacion = true
+        @Suppress("DEPRECATION")
+        val versionActual = runCatching {
+            requireContext().packageManager.getPackageInfo(requireContext().packageName, 0).versionCode
+        }.getOrDefault(Int.MAX_VALUE)
+        lifecycleScope.launch {
+            val info = ActualizacionChecker.verificar(versionActual)
+            if (info != null && isAdded) mostrarDialogoActualizacion(info)
+        }
+    }
+
+    private fun mostrarDialogoActualizacion(info: ActualizacionInfo) {
+        val mensaje = "Hay una versión nueva (${info.versionName}) disponible." +
+            if (info.notas.isNotBlank()) "\n\n${info.notas}" else ""
+        AlertDialog.Builder(requireContext())
+            .setTitle("Actualización disponible")
+            .setMessage(mensaje)
+            .setPositiveButton("Actualizar") { _, _ -> confirmarPermisoEIniciarDescarga(info) }
+            .setNegativeButton("Ahora no", null)
+            .show()
+    }
+
+    /** Instalar un APK bajado fuera de Play Store requiere este permiso, que Android
+     *  pide una sola vez por app (pantalla del sistema, no un diálogo propio). */
+    private fun confirmarPermisoEIniciarDescarga(info: ActualizacionInfo) {
+        val ctx = requireContext()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !ctx.packageManager.canRequestPackageInstalls()) {
+            AlertDialog.Builder(ctx)
+                .setTitle("Permiso necesario")
+                .setMessage("Para instalar la actualización, activá el permiso en la pantalla que se abre y volvé a tocar \"Actualizar\".")
+                .setPositiveButton("Continuar") { _, _ ->
+                    startActivity(
+                        Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${ctx.packageName}"))
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+            return
+        }
+        descargarEInstalar(info)
+    }
+
+    private fun descargarEInstalar(info: ActualizacionInfo) {
+        val ctx = requireContext()
+        val barra = ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100 }
+        val tvPorcentaje = TextView(ctx).apply { text = "0%" }
+        val contenedor = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 24, 48, 8)
+            addView(TextView(ctx).apply { text = "Descargando actualización…" })
+            addView(barra)
+            addView(tvPorcentaje)
+        }
+        val dialogo = AlertDialog.Builder(ctx)
+            .setTitle("Gestión Traza ${info.versionName}")
+            .setView(contenedor)
+            .setCancelable(false)
+            .show()
+
+        lifecycleScope.launch {
+            val uri = ApkDownloader.descargar(ctx, info.apkUrl, info.versionName) { pct ->
+                barra.progress = pct
+                tvPorcentaje.text = "$pct%"
+            }
+            dialogo.dismiss()
+            if (uri == null) {
+                showToast("No se pudo descargar la actualización. Probá de nuevo.")
+                return@launch
+            }
+            startActivity(
+                Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "application/vnd.android.package-archive")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            )
+        }
     }
 
     /** Cada módulo del productor entra por la pantalla de lectura con su propio modo. */
@@ -288,5 +380,11 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    companion object {
+        // Estático: aunque el usuario vaya y vuelva a Inicio varias veces, el aviso
+        // de actualización se consulta una sola vez por apertura de la app.
+        private var yaVerificoActualizacion = false
     }
 }
