@@ -22,7 +22,8 @@
             android:fontFamily="monospace"
             android:textSize="13sp"
             android:textStyle="bold"
-            android:textColor="#1a1a18"/>
+            android:textColor="#1a1a18"
+            android:textIsSelectable="true"/>
 
         <TextView
             android:id="@+id/btnEliminar"

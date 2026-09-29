@@ -152,7 +152,7 @@ class UbicacionActualFragment : Fragment() {
         resultados.removeAll { it.codigo == codigo }
         binding.tvContadorBar.text = "${caravanas.size} caravanas"
         // Si la entidad filtrada se quedó sin caravanas, se saca del filtro para no dejar la lista vacía.
-        val entidades = resultados.filter { it.ok }.map { it.renspa.trim() }.toSet()
+        val entidades = resultados.map { it.renspaKey() }.toSet()
         filtroRenspa = filtroRenspa?.intersect(entidades)?.takeIf { it.isNotEmpty() }
         mostrarResultados()
         if (resultados.isNotEmpty()) actualizarResumen() else binding.tvBanner.visibility = View.GONE
@@ -204,7 +204,7 @@ class UbicacionActualFragment : Fragment() {
         val validez = filtroValidez
         // Las que no tienen datos van primero; entre sí conservan su orden.
         val visibles = resultados
-            .filter { (filtro == null || (it.ok && filtro.contains(it.renspa.trim()))) &&
+            .filter { (filtro == null || filtro.contains(it.renspaKey())) &&
                 (validez == null || it.ok == validez) }
             .sortedBy { if (it.ok) 1 else 0 }
 
@@ -215,15 +215,20 @@ class UbicacionActualFragment : Fragment() {
         actualizarContadores()
     }
 
+    /** Clave por la que se agrupa/filtra: el RENSPA si lo tiene, o "" para las que no
+     *  tienen datos de SENASA (sin RENSPA informado o la consulta falló) — todas van
+     *  juntas al grupo "Sin RENSPA". */
+    private fun ResultItem.renspaKey() = if (ok) renspa.trim() else ""
+
     /** Entidades (RENSPA/feria) distintas entre las caravanas ya ubicadas, con
-     *  cuántas caravanas tiene cada una — para el selector múltiple. */
+     *  cuántas caravanas tiene cada una — para el selector múltiple. Las que no
+     *  tienen RENSPA (SENASA no lo informó, o la consulta falló) se agrupan como
+     *  "Sin RENSPA", al final. */
     private fun entidadesDisponibles(): List<Triple<String, String, Int>> {
-        val porRenspa = resultados.filter { it.ok }
-            .groupBy { it.renspa.trim() }
-            .filterKeys { it.isNotEmpty() }
+        val porRenspa = resultados.groupBy { it.renspaKey() }
         return porRenspa.entries
             .map { (renspa, items) -> Triple(renspa, items.first().establecimiento.ifBlank { "(sin nombre)" }, items.size) }
-            .sortedBy { it.second.lowercase() }
+            .sortedWith(compareBy({ it.first.isEmpty() }, { it.second.lowercase() }))
     }
 
     /** Filtro múltiple: se puede elegir una o varias entidades para que la lista
@@ -234,7 +239,9 @@ class UbicacionActualFragment : Fragment() {
             showToast("Todavía no hay entidades para filtrar")
             return
         }
-        val etiquetas = entidades.map { (renspa, nombre, cantidad) -> "$nombre · $renspa ($cantidad)" }.toTypedArray()
+        val etiquetas = entidades.map { (renspa, nombre, cantidad) ->
+            if (renspa.isEmpty()) "Sin RENSPA ($cantidad)" else "$nombre · $renspa ($cantidad)"
+        }.toTypedArray()
         val seleccion = BooleanArray(entidades.size) { i ->
             filtroRenspa?.contains(entidades[i].first) ?: true
         }
@@ -267,7 +274,7 @@ class UbicacionActualFragment : Fragment() {
             exportarXlsx(resultados)
             return
         }
-        val filtrados = resultados.filter { it.ok && filtro.contains(it.renspa.trim()) }
+        val filtrados = resultados.filter { filtro.contains(it.renspaKey()) }
         AlertDialog.Builder(requireContext())
             .setTitle("¿Qué querés compartir?")
             .setItems(arrayOf("Todas (${resultados.size})", "Solo filtradas (${filtrados.size})")) { _, which ->
@@ -350,7 +357,10 @@ class UbicacionActualFragment : Fragment() {
                 findViewById<TextView>(R.id.btnEliminar).setOnClickListener { eliminar(item.codigo) }
                 findViewById<TextView>(R.id.tvRenspa).text =
                     if (item.ok) item.renspa.ifBlank { "sin datos" }
-                    else item.error.ifBlank { "sin datos" }
+                    // El motivo real (ej. "Demasiadas solicitudes" de SENASA) es un
+                    // detalle técnico que no le sirve al usuario; solo se muestra en
+                    // el .xlsx exportado.
+                    else "Sin datos para mostrar"
                 findViewById<TextView>(R.id.tvEstablecimiento).text =
                     if (item.ok) item.establecimiento.ifBlank { "sin datos" } else "—"
                 findViewById<TextView>(R.id.tvTitular).text =

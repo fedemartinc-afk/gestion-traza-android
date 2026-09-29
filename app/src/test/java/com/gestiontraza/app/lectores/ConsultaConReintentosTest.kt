@@ -14,6 +14,8 @@ class ConsultaConReintentosTest {
 
         val resultado = ConsultaConReintentos.consultar(
             listOf("A", "B", "C"),
+            pausaEntreConsultasMs = 0,
+            esperaAntesDePasada = { 0L },
             esValido = { it }
         ) { cod ->
             ordenDeLlamadas.add(cod)
@@ -35,6 +37,8 @@ class ConsultaConReintentosTest {
         var llamadas = 0
         val resultado = ConsultaConReintentos.consultar(
             listOf("X"),
+            pausaEntreConsultasMs = 0,
+            esperaAntesDePasada = { 0L },
             esValido = { it }
         ) { llamadas++; false }
 
@@ -46,6 +50,7 @@ class ConsultaConReintentosTest {
     @Test fun devuelveUnResultadoPorCadaCodigoSinDuplicarLosRepetidos() = runBlocking {
         val resultado = ConsultaConReintentos.consultar(
             listOf("A", "A", "B"),
+            pausaEntreConsultasMs = 0,
             esValido = { true }
         ) { it }
         assertEquals(setOf("A", "B"), resultado.keys)
