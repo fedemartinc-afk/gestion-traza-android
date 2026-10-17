@@ -26,7 +26,9 @@ class PendingQueue(context: Context) {
         val cuentaId: String,
         val timestamp: Long = System.currentTimeMillis(),
         /** Título opcional del mensaje (máx. 25 caracteres) para "Enviar a usuario web" sin módulo. */
-        val titulo: String = ""
+        val titulo: String = "",
+        /** Sexo leído por caravana (código → "M"/"H"); vacío si no se registró. */
+        val sexos: Map<String, String> = emptyMap()
     )
 
     fun add(item: PendingItem) {
@@ -66,7 +68,10 @@ class PendingQueue(context: Context) {
                     lon = if (j.isNull("lon")) null else j.getDouble("lon"),
                     cuentaId = j.optString("cuentaId", ""),
                     timestamp = j.getLong("timestamp"),
-                    titulo = j.optString("titulo", "")
+                    titulo = j.optString("titulo", ""),
+                    sexos = j.optJSONObject("sexos")?.let { o ->
+                        o.keys().asSequence().associateWith { k -> o.optString(k) }
+                    } ?: emptyMap()
                 )
             }.getOrNull()
         }
@@ -81,6 +86,7 @@ class PendingQueue(context: Context) {
         put("cuentaId", item.cuentaId)
         put("timestamp", item.timestamp)
         put("titulo", item.titulo)
+        if (item.sexos.isNotEmpty()) put("sexos", JSONObject(item.sexos))
     }
 
     private fun guardarTodos(items: List<PendingItem>) {

@@ -9,14 +9,32 @@
     android:paddingTop="12dp"
     android:paddingBottom="4dp">
 
-    <TextView
-        android:id="@+id/tvNombre"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text=""
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:textColor="#1a1a18"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Solo en el modo "Unir sesiones" -->
+        <CheckBox
+            android:id="@+id/cbSeleccion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:clickable="false"
+            android:focusable="false"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/tvNombre"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#1a1a18"/>
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tvDetalle"
@@ -28,6 +46,7 @@
         android:layout_marginTop="2dp"/>
 
     <LinearLayout
+        android:id="@+id/llAcciones"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"

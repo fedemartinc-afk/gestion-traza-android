@@ -93,37 +93,63 @@
 
     </LinearLayout>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnCompartirEstado"
+    <!-- Fila 1: Compartir (izquierda) y Filtrar (derecha) -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:layout_marginHorizontal="14dp"
-        android:layout_marginTop="8dp"
-        android:text="📤  Compartir resultado"
-        android:visibility="gone"
-        style="@style/BtnSecondary"/>
+        android:layout_marginTop="8dp">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnAgregarCaravana"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCompartirEstado"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="📤  Compartir"
+            android:visibility="gone"
+            style="@style/BtnSecondary"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFiltroValidez"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="🔎  Filtrar"
+            android:visibility="gone"
+            style="@style/BtnSecondary"/>
+    </LinearLayout>
+
+    <!-- Fila 2: Agregar y Leer caravanas (vuelve al menú para empezar otra lectura) -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:layout_marginHorizontal="14dp"
-        android:layout_marginTop="8dp"
-        android:text="➕  Agregar caravana"
-        android:visibility="gone"
-        style="@style/BtnSecondary"/>
+        android:layout_marginTop="8dp">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnFiltroValidez"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="14dp"
-        android:layout_marginTop="8dp"
-        android:text="🔎  Filtrar válidas / inválidas"
-        android:visibility="gone"
-        style="@style/BtnSecondary"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAgregarCaravana"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="➕  Agregar"
+            android:visibility="gone"
+            style="@style/BtnSecondary"/>
 
-
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLeerCaravanas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="Leer caravanas"
+            android:visibility="gone"
+            style="@style/BtnSecondary"/>
+    </LinearLayout>
 
     <!-- Progreso de la consulta -->
     <LinearLayout

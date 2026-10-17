@@ -43,7 +43,33 @@
                 android:fontFamily="monospace"
                 android:textSize="14sp"
                 android:textColor="@color/verde_ok"/>
+
+            <TextView
+                android:id="@+id/tvSexo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="@color/gris_texto"
+                android:visibility="gone"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+
+            <ImageButton
+                android:id="@+id/btnEliminar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_delete"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="6dp"
+                android:tint="@color/gris_texto"
+                android:contentDescription="Eliminar caravana"/>
         </LinearLayout>
+
     </LinearLayout>
 
 </LinearLayout>

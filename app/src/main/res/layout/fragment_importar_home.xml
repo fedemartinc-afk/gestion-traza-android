@@ -37,7 +37,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Importar sesiones"
+                    android:text="Ver / importar sesiones"
                     android:textColor="@color/blanco"
                     android:textSize="16sp"
                     android:textStyle="bold"/>
@@ -95,6 +95,15 @@
                     android:layout_marginTop="16dp"
                     android:text="🗂  Sesiones guardadas en este dispositivo"
                     style="@style/BtnPrimary"/>
+
+                <!-- Unir varias sesiones guardadas en una sola -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnUnirSesiones"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="🔗  Unir sesiones"
+                    style="@style/BtnSecondary"/>
 
                 <!-- 3° Importar archivo -->
                 <com.google.android.material.button.MaterialButton

@@ -15,6 +15,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.gestiontraza.app.R
 import com.gestiontraza.app.data.ApiClient
+import com.gestiontraza.app.data.CaravanaSexo
 import com.gestiontraza.app.data.PendingQueue
 import com.gestiontraza.app.data.SessionManager
 import com.gestiontraza.app.databinding.FragmentEnviarWebBinding
@@ -35,6 +36,7 @@ class EnviarWebFragment : Fragment() {
     private val args: EnviarWebFragmentArgs by navArgs()
     private lateinit var session: SessionManager
     private lateinit var caravanas: List<String>
+    private var sexos: Map<String, String> = emptyMap()
     private var campoEscaneo: TextInputEditText? = null
 
     private val barcodeResultLauncher = registerForActivityResult(
@@ -55,7 +57,9 @@ class EnviarWebFragment : Fragment() {
         binding.btnBack.setOnClickListener { findNavController().navigateUp() }
 
         val arr = JSONArray(args.caravanas)
-        caravanas = (0 until arr.length()).map { arr.getString(it) }
+        val lineas = (0 until arr.length()).map { arr.getString(it) }
+        caravanas = CaravanaSexo.codigos(lineas)
+        sexos = CaravanaSexo.mapa(lineas)
         val n = caravanas.size
         binding.tvResumen.text = "$n caravana${if (n != 1) "s" else ""}"
 
@@ -122,7 +126,8 @@ class EnviarWebFragment : Fragment() {
                     lat = null,
                     lon = null,
                     cuentaId = session.cuentaActivaId,
-                    titulo = mensaje
+                    titulo = mensaje,
+                    sexos = sexos
                 )
             )
             mostrarPendiente("Sin conexión — ${caravanas.size} caravanas guardadas como pendiente")
@@ -138,7 +143,8 @@ class EnviarWebFragment : Fragment() {
                     dte = dtes.joinToString("|"),
                     caravanas = caravanas,
                     tipo = "web",
-                    extra = mapOf("titulo" to mensaje)
+                    extra = mapOf("titulo" to mensaje),
+                    sexos = sexos
                 )
             }
             cargando(false)

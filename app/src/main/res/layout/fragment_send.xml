@@ -139,6 +139,16 @@
                 style="@style/BtnPrimary"
                 android:layout_marginBottom="8dp"/>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUbicacionActual"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="📍  Ubicación actual caravana"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                style="@style/BtnPrimary"
+                android:layout_marginBottom="8dp"/>
+
             <!-- Resultados de verificación (inicialmente oculto) -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardVerificacion"
@@ -257,6 +267,15 @@
                 android:gravity="center"
                 android:layout_marginBottom="16dp"/>
 
+            <!-- Vuelve al inicio para empezar una nueva lectura -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLeerCaravanas"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Leer caravanas"
+                android:textSize="15sp"
+                style="@style/BtnPrimary"
+                android:layout_marginBottom="16dp"/>
 
             <!-- Progreso -->
             <ProgressBar

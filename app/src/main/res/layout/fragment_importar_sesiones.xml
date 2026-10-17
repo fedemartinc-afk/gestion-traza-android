@@ -35,6 +35,18 @@
 
     </RelativeLayout>
 
+    <!-- Unir sesiones: abre la selección de varias sesiones para generar una sola -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnUnirSesiones"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="4dp"
+        android:text="🔗  Unir sesiones"
+        android:visibility="gone"
+        style="@style/BtnSecondary"/>
+
     <TextView
         android:id="@+id/tvVacio"
         android:layout_width="match_parent"
@@ -51,5 +63,49 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"/>
+
+    <!-- Modo "Unir sesiones": cuántas hay elegidas y confirmar / cancelar -->
+    <LinearLayout
+        android:id="@+id/barraUnir"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/blanco"
+        android:padding="10dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvSeleccion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textColor="@color/gris_texto"
+            android:layout_marginBottom="6dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelarUnir"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="Cancelar"
+                style="@style/BtnSecondary"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnConfirmarUnir"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="Unir"
+                style="@style/BtnPrimary"/>
+        </LinearLayout>
+    </LinearLayout>
 
 </LinearLayout>

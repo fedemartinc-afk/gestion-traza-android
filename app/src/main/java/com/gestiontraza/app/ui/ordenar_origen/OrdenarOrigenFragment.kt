@@ -21,6 +21,11 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.gestiontraza.app.R
 import com.gestiontraza.app.data.ApiClient
+import com.gestiontraza.app.data.CaravanaSexo
+import com.gestiontraza.app.ui.estado.agregarLinea
+import com.gestiontraza.app.ui.estado.listadoConSexo
+import com.gestiontraza.app.ui.estado.resumenComparacionSexo
+import com.gestiontraza.app.ui.estado.sube
 import com.gestiontraza.app.data.ConsultaConReintentos
 import com.gestiontraza.app.data.PendingQueue
 import com.gestiontraza.app.data.SenasaClient
@@ -40,6 +45,13 @@ class OrdenarOrigenFragment : Fragment() {
     private val args: OrdenarOrigenFragmentArgs by navArgs()
     private lateinit var session: SessionManager
     private lateinit var caravanas: List<String>
+    // Sexo leído por código (si se registró al leer): se compara contra el de SIGSA.
+    private var sexosLeidos: Map<String, String> = emptyMap()
+
+    private fun coincidenciaSexo(cod: String): CaravanaSexo.Coincidencia? {
+        val d = datosCaravana[cod]?.takeIf { it.ok } ?: return null
+        return CaravanaSexo.comparar(sexosLeidos[cod], d.sexo)
+    }
 
     /** Datos de SENASA por caravana, consultados una vez al entrar a la pantalla. */
     private val datosCaravana = mutableMapOf<String, SenasaClient.EstadoCaravana>()
@@ -86,7 +98,9 @@ class OrdenarOrigenFragment : Fragment() {
         super.onViewCreated(view, saved)
         session = SessionManager(requireContext())
         val arr = JSONArray(args.caravanas)
-        caravanas = (0 until arr.length()).map { arr.getString(it) }
+        val lineas = (0 until arr.length()).map { arr.getString(it) }
+        caravanas = CaravanaSexo.codigos(lineas)
+        sexosLeidos = CaravanaSexo.mapa(lineas)
         binding.tvContadorBar.text = "${caravanas.size} caravanas"
 
         if (!session.manualDte) {
@@ -221,6 +235,7 @@ class OrdenarOrigenFragment : Fragment() {
 
         binding.tvEntidadesCount.text = "Entidades (RENSPA/feria)\n${entidades.size}"
         binding.tvSexoCount.text = "Macho $machos   Hembra $hembras   s/sexo $sinSexo"
+        binding.tvSexoCount.agregarLinea(resumenComparacionSexo(requireContext(), caravanas.map { coincidenciaSexo(it) }))
         binding.panelContadores.visibility = if (datosCaravana.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
@@ -324,6 +339,10 @@ class OrdenarOrigenFragment : Fragment() {
                 if (grupo != null) grupo.caravanas.add(cod) else sinCoincidencia.add(cod)
             }
 
+            // Dentro de cada grupo suben las que no coinciden en sexo con SIGSA.
+            grupos.forEach { g -> g.caravanas.sortBy { if (coincidenciaSexo(it).sube()) 0 else 1 } }
+            sinCoincidencia.sortBy { if (coincidenciaSexo(it).sube()) 0 else 1 }
+
             binding.progressCarga.visibility = View.GONE
             binding.tvProgreso.visibility = View.GONE
             binding.btnCargar.isEnabled = true
@@ -356,7 +375,8 @@ class OrdenarOrigenFragment : Fragment() {
                         caravanas = caravanas,
                         lat = null,
                         lon = null,
-                        cuentaId = session.cuentaActivaId
+                        cuentaId = session.cuentaActivaId,
+                        sexos = sexosLeidos
                     )
                 )
                 mostrarResultadoEnvio(true, "Sin conexión — ${caravanas.size} caravanas guardadas como pendiente")
@@ -373,7 +393,8 @@ class OrdenarOrigenFragment : Fragment() {
                         dte       = dtes.joinToString("|"),
                         caravanas = caravanas,
                         tipo      = "verificacion",
-                        extra     = mapOf("titulo" to "Ordenar por Origen")
+                        extra     = mapOf("titulo" to "Ordenar por Origen"),
+                        sexos     = sexosLeidos
                     )
                 }
                 binding.btnCargar.isEnabled = true
@@ -420,7 +441,8 @@ class OrdenarOrigenFragment : Fragment() {
         if (sinCoincidencia.isNotEmpty()) {
             binding.panelSinCoincidencia.visibility = View.VISIBLE
             binding.tvSinCoincidenciaTitulo.text = "Sin coincidencia de origen (${sinCoincidencia.size})"
-            binding.tvSinCoincidenciaLista.text = sinCoincidencia.joinToString("\n")
+            binding.tvSinCoincidenciaLista.text =
+                listadoConSexo(requireContext(), sinCoincidencia.map { it to coincidenciaSexo(it) })
         } else {
             binding.panelSinCoincidencia.visibility = View.GONE
         }
@@ -460,10 +482,12 @@ class OrdenarOrigenFragment : Fragment() {
         val maxColapsado = 5
         var expandido = false
         fun actualizarListado() {
+            fun listado(cods: List<String>) =
+                listadoConSexo(requireContext(), cods.map { it to coincidenciaSexo(it) })
             item.tvCaravanasGrupo.text = when {
                 g.caravanas.isEmpty() -> "Sin caravanas coincidentes"
-                expandido || g.caravanas.size <= maxColapsado -> g.caravanas.joinToString("\n")
-                else -> g.caravanas.take(maxColapsado).joinToString("\n") + "\n…"
+                expandido || g.caravanas.size <= maxColapsado -> listado(g.caravanas)
+                else -> android.text.TextUtils.concat(listado(g.caravanas.take(maxColapsado)), "\n…")
             }
             item.tvVerMas.visibility = if (g.caravanas.size > maxColapsado) View.VISIBLE else View.GONE
             item.tvVerMas.text = if (expandido) "▲ Ver menos" else "▼ Ver listado completo (${g.caravanas.size})"
@@ -484,6 +508,7 @@ class OrdenarOrigenFragment : Fragment() {
             }
         }
         item.tvSexoGrupo.text = "Macho $machos   Hembra $hembras   s/sexo $sinSexo"
+        item.tvSexoGrupo.agregarLinea(resumenComparacionSexo(requireContext(), g.caravanas.map { coincidenciaSexo(it) }))
 
         item.btnEnviarGrupo.isEnabled = g.caravanas.isNotEmpty()
         item.btnEnviarGrupo.setOnClickListener { enviarGrupo(g, item) }
@@ -511,7 +536,8 @@ class OrdenarOrigenFragment : Fragment() {
                     caravanas  = g.caravanas,
                     lat        = lastLat,
                     lon        = lastLon,
-                    senasaEnv  = session.senasaEnv
+                    senasaEnv  = session.senasaEnv,
+                    sexos      = sexosLeidos
                 )
             }
             item.progressGrupo.visibility = View.GONE

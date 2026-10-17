@@ -60,7 +60,7 @@ object SenasaClient {
      * SENASA usa HTTP 200 para todo — el error viene dentro del body con "errorCode".
      * Devuelve Pair(exitoso, mensajeError). Si exitoso=true, mensajeError está vacío.
      */
-    private fun parsearRespuestaSenasa(j: JSONObject?, httpCode: Int): Pair<Boolean, String> {
+    internal fun parsearRespuestaSenasa(j: JSONObject?, httpCode: Int): Pair<Boolean, String> {
         if (j == null) return Pair(false, "Respuesta vacía (HTTP $httpCode)")
         // Error explícito de SENASA: campo errorCode presente
         if (j.has("errorCode")) {
@@ -83,7 +83,7 @@ object SenasaClient {
     }
 
     /** Extrae número de lote de distintos campos posibles en la respuesta */
-    private fun extraerNumeroLote(j: JSONObject?): String? {
+    internal fun extraerNumeroLote(j: JSONObject?): String? {
         if (j == null) return null
         // SENASA devuelve el N° de lote directamente en "data" (número entero)
         val dataRaw = j.opt("data")
@@ -95,6 +95,13 @@ object SenasaClient {
         val lote = data?.opt("numeroLote") ?: data?.opt("lote") ?: data?.opt("id")
             ?: data?.opt("numero") ?: j.opt("numeroLote") ?: j.opt("lote") ?: j.opt("id")
         return lote?.toString()?.ifBlank { null }
+    }
+
+    /** Texto de un campo; vacío si falta o si SENASA lo manda en null (org.json lo convertiría en "null"). */
+    internal fun textoSinNulo(o: JSONObject, clave: String): String {
+        if (!o.has(clave) || o.isNull(clave)) return ""
+        val t = o.optString(clave).trim()
+        return if (t.equals("null", ignoreCase = true)) "" else t
     }
 
     /** Consulta individual de caravana en SENASA */
@@ -220,9 +227,9 @@ object SenasaClient {
             }
 
             // tieneTRI: verificar número de TRI o flags del movimiento
-            val nroTRI = data.optString("tri").ifBlank { null }
-                ?: data.optString("nroTri").ifBlank { null }
-                ?: data.optString("nroTRI").ifBlank { null }
+            val nroTRI = textoSinNulo(data, "tri").ifBlank { null }
+                ?: textoSinNulo(data, "nroTri").ifBlank { null }
+                ?: textoSinNulo(data, "nroTRI").ifBlank { null }
                 ?: ""
             val tieneTRI = nroTRI.isNotBlank()
                 || data.optBoolean("tieneTriOriginal", false)
@@ -256,7 +263,7 @@ object SenasaClient {
             return Result(false, FormatoCaravana.mensaje(it))
         }
         return try {
-            val dteNumero = dte.split("-")[0].trim()
+            val dteNumero = NumeroDte.nueve(dte)
             val latVal = lat ?: 0.0
             val lonVal = lon ?: 0.0
 
@@ -274,7 +281,7 @@ object SenasaClient {
                 put("wsToken", wsToken)
                 put("especie", "01")
                 put("servicio", "CIERRE")
-                put("numero", dte)
+                put("numero", dteNumero)
                 put("dte", dteNumero)
                 put("identificaciones", identificaciones)
             }

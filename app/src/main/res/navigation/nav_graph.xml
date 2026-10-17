@@ -148,6 +148,9 @@
         <action
             android:id="@+id/action_send_to_sesiones"
             app:destination="@id/importarSesionesFragment"/>
+        <action
+            android:id="@+id/action_send_to_ubicacionActual"
+            app:destination="@id/ubicacionActualFragment"/>
     </fragment>
 
     <!-- Segunda pantalla de "Enviar a usuario web": DTe(s) y mensaje opcional -->
@@ -214,6 +217,11 @@
         <argument
             android:name="caravanas"
             app:argType="string"/>
+        <action
+            android:id="@+id/action_ubicacion_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true"/>
     </fragment>
 
     <!-- Agrupa las caravanas leídas según el origen de uno o más DTe (ambos perfiles) -->
@@ -262,13 +270,18 @@
         <action
             android:id="@+id/action_hub_to_sesiones"
             app:destination="@id/importarSesionesFragment"/>
+        <action
+            android:id="@+id/action_hub_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true"/>
     </fragment>
 
     <!-- ===== Importar sesiones de lectores RFID (ambos perfiles) ===== -->
     <fragment
         android:id="@+id/importarHomeFragment"
         android:name="com.gestiontraza.app.ui.importar.home.ImportarHomeFragment"
-        android:label="Importar sesiones">
+        android:label="Ver / importar sesiones">
         <action
             android:id="@+id/action_importarHome_to_conectar"
             app:destination="@id/importarConectarFragment"/>
@@ -302,6 +315,11 @@
         android:id="@+id/importarSesionesFragment"
         android:name="com.gestiontraza.app.ui.importar.sesiones.ImportarSesionesFragment"
         android:label="Sesiones guardadas">
+        <!-- true: entra directo en el modo de selección de "Unir sesiones" -->
+        <argument
+            android:name="modoUnir"
+            app:argType="boolean"
+            android:defaultValue="false"/>
         <action
             android:id="@+id/action_importarSesiones_to_detalle"
             app:destination="@id/importarDetalleSesionFragment"/>

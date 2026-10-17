@@ -9,7 +9,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.gestiontraza.app.data.ReaderTips
+import com.gestiontraza.app.data.CaravanaSexo
 import com.gestiontraza.app.data.SessionFileStore
+import com.gestiontraza.app.data.TablaImportada
 import com.gestiontraza.app.data.XlsxReader
 import com.gestiontraza.app.databinding.FragmentImportarHomeBinding
 import com.gestiontraza.app.ui.importar.guardarSesionImportada
@@ -59,6 +61,9 @@ class ImportarHomeFragment : Fragment() {
             ))
         }
 
+        binding.btnUnirSesiones.setOnClickListener {
+            findNavController().navigate(ImportarHomeFragmentDirections.actionImportarHomeToSesiones(modoUnir = true))
+        }
         binding.btnVerSesiones.setOnClickListener {
             findNavController().navigate(ImportarHomeFragmentDirections.actionImportarHomeToSesiones())
         }
@@ -99,10 +104,13 @@ class ImportarHomeFragment : Fragment() {
                     // después de la caravana separadas por coma (ej. Tru-Test XRS2 "032
                     // 010030479031,,2026-09-23,17:08:19,,,") — solo importa el primer
                     // campo, que es el código.
-                    else ->
-                        BufferedReader(InputStreamReader(pushback)).readLines()
-                            .map { it.substringBefore(',').trim() }
-                            .filter { it.isNotBlank() }
+                    // Si trae encabezado con columna EID (y opcionalmente Sex), se leen esas
+                    // columnas: el código y el sexo registrado por el lector.
+                    else -> {
+                        val crudas = BufferedReader(InputStreamReader(pushback)).readLines()
+                        TablaImportada.aLineas(crudas)
+                            ?: crudas.map { it.substringBefore(',').trim() }.filter { it.isNotBlank() }
+                    }
                 }
             } ?: emptyList()
         } catch (e: Exception) {
@@ -120,7 +128,18 @@ class ImportarHomeFragment : Fragment() {
             return
         }
 
+        avisarSexoDetectado(lineas)
         pedirNombreYGuardar(lineas)
+    }
+
+    /** Si el archivo trae el sexo de las caravanas, lo avisa: queda guardado en la sesión. */
+    private fun avisarSexoDetectado(lineas: List<String>) {
+        val machos = lineas.count { CaravanaSexo.sexo(it) == "M" }
+        val hembras = lineas.count { CaravanaSexo.sexo(it) == "H" }
+        if (machos + hembras == 0) return
+        val sinDato = lineas.size - machos - hembras
+        showToast("Se detectó el sexo: $machos macho${if (machos != 1) "s" else ""}, $hembras hembra${if (hembras != 1) "s" else ""}" +
+            (if (sinDato > 0) ", $sinDato sin dato" else "") + ". Se guarda en la sesión.")
     }
 
     private fun pedirNombreYGuardar(lineas: List<String>) {

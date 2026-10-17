@@ -18,6 +18,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.gestiontraza.app.R
 import com.gestiontraza.app.data.ApiClient
+import com.gestiontraza.app.data.CaravanaSexo
 import com.gestiontraza.app.data.PendingQueue
 import com.gestiontraza.app.data.SessionFileStore
 import com.gestiontraza.app.data.SessionManager
@@ -51,7 +52,11 @@ class HubFragment : Fragment() {
     private val binding get() = _binding!!
     private val args: HubFragmentArgs by navArgs()
     private lateinit var session: SessionManager
+    // Códigos puros (para consultar y enviar), el sexo leído por código y las líneas
+    // originales ("código" o "código,M") que viajan a las otras pantallas y a las sesiones.
     private lateinit var caravanas: List<String>
+    private var sexos: Map<String, String> = emptyMap()
+    private lateinit var lineas: List<String>
     private lateinit var caravanasJson: String
 
     private var lastLat: Double? = null
@@ -80,7 +85,9 @@ class HubFragment : Fragment() {
 
         caravanasJson = args.caravanas
         val arr = JSONArray(args.caravanas)
-        caravanas = (0 until arr.length()).map { arr.getString(it) }
+        lineas = (0 until arr.length()).map { arr.getString(it) }
+        caravanas = CaravanaSexo.codigos(lineas)
+        sexos = CaravanaSexo.mapa(lineas)
         binding.tvResumen.text = "${caravanas.size} caravana${if (caravanas.size != 1) "s" else ""} válida${if (caravanas.size != 1) "s" else ""}"
 
         binding.btnBack.setOnClickListener { findNavController().navigateUp() }
@@ -89,16 +96,6 @@ class HubFragment : Fragment() {
         val esProductor = session.tipoSesionActual == "productor"
         binding.btnEstadoTri.visibility = if (esProductor) View.VISIBLE else View.GONE
         binding.btnEstadoPredespacho.visibility = if (esProductor) View.VISIBLE else View.GONE
-        // Enviar a DT-e (cierre): en ambos perfiles. En consignatario va debajo de
-        // "Ver sesiones en este dispositivo" (igual que en la pantalla de lectura).
-        if (!esProductor) {
-            val padre = binding.btnVerSesiones.parent as ViewGroup
-            padre.removeView(binding.btnEnviarCierre)
-            padre.removeView(binding.tvCierreNota)
-            val pos = padre.indexOfChild(binding.btnVerSesiones) + 1
-            padre.addView(binding.btnEnviarCierre, pos)
-            padre.addView(binding.tvCierreNota, pos + 1)
-        }
         fetchLocation()
 
         binding.btnVerificarOrigen.setOnClickListener {
@@ -121,11 +118,15 @@ class HubFragment : Fragment() {
         }
         binding.btnEnviarWebSinVerificar.setOnClickListener { enviarSinVerificar() }
         binding.btnEnviarCierre.setOnClickListener { pedirDteCierre() }
+        // Vuelve al inicio para empezar una nueva lectura de caravanas.
+        binding.btnLeerCaravanas.setOnClickListener {
+            findNavController().navigate(R.id.action_hub_to_home)
+        }
         binding.btnVerSesiones.setOnClickListener {
             findNavController().navigate(HubFragmentDirections.actionHubToSesiones())
         }
         binding.btnCrearSesion.setOnClickListener {
-            guardarSesionImportada(SessionFileStore(requireContext()), "", "Lectura", caravanas, "caravanas") { nombre ->
+            guardarSesionImportada(SessionFileStore(requireContext()), "", "Lectura", lineas, "caravanas") { nombre ->
                 android.widget.Toast.makeText(
                     requireContext(), "Sesión \"$nombre\" guardada en el dispositivo", android.widget.Toast.LENGTH_LONG
                 ).show()
@@ -194,14 +195,16 @@ class HubFragment : Fragment() {
     /** Saca de la lista las caravanas con formato inválido; después hay que volver a enviar. */
     private fun eliminarInvalidas() {
         val antes = caravanas.size
-        caravanas = caravanas.filter { FormatoCaravana.esValida(it) }
+        lineas = lineas.filter { FormatoCaravana.esValida(CaravanaSexo.codigo(it)) }
+        caravanas = CaravanaSexo.codigos(lineas)
+        sexos = CaravanaSexo.mapa(lineas)
         val quitadas = antes - caravanas.size
         if (caravanas.isEmpty()) {
             android.widget.Toast.makeText(requireContext(), "No quedaron caravanas válidas", android.widget.Toast.LENGTH_LONG).show()
             findNavController().navigateUp()
             return
         }
-        caravanasJson = JSONArray(caravanas).toString()
+        caravanasJson = JSONArray(lineas).toString()
         binding.tvResumen.text = "${caravanas.size} caravana${if (caravanas.size != 1) "s" else ""} válida${if (caravanas.size != 1) "s" else ""}"
         android.widget.Toast.makeText(
             requireContext(), "Se eliminaron $quitadas caravana${if (quitadas != 1) "s" else ""}. Volvé a enviar el cierre.",
@@ -218,7 +221,8 @@ class HubFragment : Fragment() {
                     caravanas = caravanas,
                     lat = lastLat,
                     lon = lastLon,
-                    cuentaId = session.cuentaActivaId
+                    cuentaId = session.cuentaActivaId,
+                    sexos = sexos
                 )
             )
             showPending("Sin conexión — ${caravanas.size} caravanas guardadas como pendiente")
@@ -236,7 +240,8 @@ class HubFragment : Fragment() {
                     caravanas  = caravanas,
                     lat        = lastLat,
                     lon        = lastLon,
-                    senasaEnv  = session.senasaEnv
+                    senasaEnv  = session.senasaEnv,
+                    sexos      = sexos
                 )
             }
             setLoading(false)
@@ -271,7 +276,8 @@ class HubFragment : Fragment() {
                     lat = null,
                     lon = null,
                     cuentaId = session.cuentaActivaId,
-                    titulo = titulo
+                    titulo = titulo,
+                    sexos = sexos
                 )
             )
             showPending("Sin conexión — ${caravanas.size} caravanas guardadas como pendiente")
@@ -287,7 +293,8 @@ class HubFragment : Fragment() {
                     dte       = "",
                     caravanas = caravanas,
                     tipo      = "web",
-                    extra     = mapOf("titulo" to titulo)
+                    extra     = mapOf("titulo" to titulo),
+                    sexos     = sexos
                 )
             }
             setLoading(false)

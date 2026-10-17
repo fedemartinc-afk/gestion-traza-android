@@ -53,7 +53,7 @@ class ImportarDetalleSesionFragment : Fragment() {
         // donde se elige qué hacer con ellas según el perfil activo.
         binding.btnUsarEnApp.setOnClickListener {
             val vm = ReadingViewModel()
-            vm.addTexto(contenido.joinToString("\n"))
+            vm.addLineas(contenido)
             val validas = vm.validas()
             if (validas.isEmpty()) {
                 android.widget.Toast.makeText(requireContext(), "La sesión no tiene caravanas válidas", android.widget.Toast.LENGTH_SHORT).show()

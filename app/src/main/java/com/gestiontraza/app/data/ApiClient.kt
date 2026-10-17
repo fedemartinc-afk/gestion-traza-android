@@ -68,17 +68,24 @@ object ApiClient {
         }
     }
 
+    /** Sexo leído por caravana (código → "M"/"H"): solo se manda si se registró. */
+    private fun JSONObject.putSexos(sexos: Map<String, String>) {
+        if (sexos.isNotEmpty()) put("sexos", JSONObject(sexos))
+    }
+
     fun enviarNuevaTRI(
         baseUrl: String,
         token: String,
         nota: String,
-        caravanas: List<String>
+        caravanas: List<String>,
+        sexos: Map<String, String> = emptyMap()
     ): Result {
         return try {
             val body = JSONObject().apply {
                 put("tipo", "tri")
                 put("nota", nota)
                 put("caravanas", JSONArray(caravanas))
+                putSexos(sexos)
             }
             val req = Request.Builder()
                 .url("$baseUrl/api/android/enviar")
@@ -102,12 +109,14 @@ object ApiClient {
         baseUrl: String,
         token: String,
         dte: String,
-        caravanas: List<String>
+        caravanas: List<String>,
+        sexos: Map<String, String> = emptyMap()
     ): Result {
         return try {
             val body = JSONObject().apply {
                 put("dte", dte)
                 put("caravanas", JSONArray(caravanas))
+                putSexos(sexos)
             }
             val req = Request.Builder()
                 .url("$baseUrl/api/android/enviar")
@@ -137,12 +146,14 @@ object ApiClient {
         dte: String,
         caravanas: List<String>,
         tipo: String,
-        extra: Map<String, String> = emptyMap()
+        extra: Map<String, String> = emptyMap(),
+        sexos: Map<String, String> = emptyMap()
     ): Result {
         return try {
             val body = JSONObject().apply {
                 put("dte", dte)
                 put("caravanas", JSONArray(caravanas))
+                putSexos(sexos)
                 put("tipo", tipo)
                 extra.forEach { (k, v) -> put(k, v) }
             }
@@ -181,7 +192,8 @@ object ApiClient {
         caravanas: List<String>,
         lat: Double?,
         lon: Double?,
-        senasaEnv: String = "replica"
+        senasaEnv: String = "replica",
+        sexos: Map<String, String> = emptyMap()
     ): Result {
         FormatoCaravana.invalidas(caravanas).takeIf { it.isNotEmpty() }?.let {
             return Result(false, FormatoCaravana.mensaje(it))
@@ -197,17 +209,20 @@ object ApiClient {
             val senasaResp = client.newCall(senasaReq).execute()
             val senasaRespBody = senasaResp.body?.string() ?: ""
 
-            val exitoso = senasaResp.isSuccessful.let {
-                // SENASA a veces devuelve 200 con ok:false
-                val j = runCatching { org.json.JSONObject(senasaRespBody) }.getOrNull()
-                it && (j == null || j.optBoolean("ok", true))
-            }
 
-            // 2. Notificar al servidor web para que aparezca en Recibidas
-            runCatching {
+            // SENASA responde HTTP 200 aunque rechace el pedido: el error viene en el cuerpo ("errorCode" o
+            // ok:false). Antes se daba por bueno todo lo que no dijera ok:false, y un rechazo con errorCode
+            // aparecía como "enviado con éxito" sin que las caravanas llegaran al DTe.
+            val jSenasa = runCatching { org.json.JSONObject(senasaRespBody) }.getOrNull()
+            val (exitoso, errorSenasa) = SenasaClient.parsearRespuestaSenasa(jSenasa, senasaResp.code)
+            val lote = if (exitoso) SenasaClient.extraerNumeroLote(jSenasa) else null
+
+            // 2. Notificar al servidor web para que aparezca en Recibidas (solo si SENASA lo aceptó)
+            if (exitoso) runCatching {
                 val notifBody = JSONObject().apply {
-                    put("dte", dte)
+                    put("dte", NumeroDte.nueve(dte))
                     put("caravanas", JSONArray(caravanas))
+                    putSexos(sexos)
                     put("tipo", "cierre")
                 }
                 val notifReq = Request.Builder()
@@ -219,11 +234,11 @@ object ApiClient {
             }
 
             if (exitoso) {
-                Result(true, "Cierre enviado correctamente a SENASA")
+                val entorno = if (senasaEnv == "produccion_gov") "producción" else "RÉPLICA (pruebas, no llega al SIGSA real)"
+                val detalleLote = lote?.let { "lote N° $it" } ?: "SENASA no informó número de lote"
+                Result(true, "Cierre aceptado por SENASA ($detalleLote, entorno $entorno)")
             } else {
-                val j = runCatching { org.json.JSONObject(senasaRespBody) }.getOrNull()
-                val msg = j?.optString("error") ?: j?.optString("message") ?: "Error ${senasaResp.code}"
-                Result(false, "SENASA: $msg")
+                Result(false, "SENASA rechazó el cierre: $errorSenasa")
             }
         } catch (e: Exception) {
             Result(false, "Error de conexión: ${e.message}")
@@ -239,7 +254,7 @@ object ApiClient {
         lon: Double?
     ): JSONObject {
         // El DTe para SENASA va sin el dígito verificador (ej: "032030063-0" → "032030063")
-        val dteNumero = dte.split("-")[0].trim()
+        val dteNumero = NumeroDte.nueve(dte)
         val latVal = lat ?: 0.0
         val lonVal = lon ?: 0.0
 
@@ -257,7 +272,7 @@ object ApiClient {
             put("wsToken",          wsToken)
             put("especie",          "01")
             put("servicio",         "CIERRE")
-            put("numero",           dte)        // lote = DTe completo con dígito
+            put("numero",           dteNumero)  // lote = DTe (9 dígitos)
             put("dte",              dteNumero)  // DTe sin dígito verificador
             put("identificaciones", identificaciones)
         }

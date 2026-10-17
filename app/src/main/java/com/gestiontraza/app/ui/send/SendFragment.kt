@@ -22,7 +22,9 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.gestiontraza.app.R
+import com.gestiontraza.app.data.NumeroDte
 import com.gestiontraza.app.data.ApiClient
+import com.gestiontraza.app.data.CaravanaSexo
 import com.gestiontraza.app.data.ConsultaConReintentos
 import com.gestiontraza.app.data.PendingQueue
 import com.gestiontraza.app.data.SenasaClient
@@ -43,7 +45,10 @@ class SendFragment : Fragment() {
 
     private val args: SendFragmentArgs by navArgs()
     private lateinit var session: SessionManager
+    // Códigos puros, sexo leído por código y líneas originales ("código" o "código,M").
     private lateinit var caravanas: List<String>
+    private var sexos: Map<String, String> = emptyMap()
+    private lateinit var lineas: List<String>
     // Mismo listado en JSON, para pasarlo a las otras pantallas (cambia si se eliminan inválidas).
     private lateinit var caravanasJson: String
 
@@ -79,7 +84,9 @@ class SendFragment : Fragment() {
 
         caravanasJson = args.caravanas
         val arr = JSONArray(args.caravanas)
-        caravanas = (0 until arr.length()).map { arr.getString(it) }
+        lineas = (0 until arr.length()).map { arr.getString(it) }
+        caravanas = CaravanaSexo.codigos(lineas)
+        sexos = CaravanaSexo.mapa(lineas)
         val n = caravanas.size
         binding.tvResumen.text = "$n caravana${if (n != 1) "s" else ""} válida${if (n != 1) "s" else ""}"
 
@@ -98,6 +105,14 @@ class SendFragment : Fragment() {
             findNavController().navigate(SendFragmentDirections.actionSendToOrdenarOrigen(caravanasJson, ""))
         }
 
+        binding.btnUbicacionActual.setOnClickListener {
+            findNavController().navigate(SendFragmentDirections.actionSendToUbicacionActual(caravanasJson))
+        }
+        // Vuelve al inicio para empezar una nueva lectura de caravanas.
+        binding.btnLeerCaravanas.setOnClickListener {
+            findNavController().navigate(R.id.action_send_to_home)
+        }
+
         binding.btnVerificarOrigen.setOnClickListener { pedirDte(ModoDte.VERIFICAR) }
         binding.btnEnviarCierre.setOnClickListener { pedirDte(ModoDte.CIERRE) }
 
@@ -106,7 +121,7 @@ class SendFragment : Fragment() {
             findNavController().navigate(SendFragmentDirections.actionSendToSesiones())
         }
         binding.btnCrearSesion.setOnClickListener {
-            guardarSesionImportada(SessionFileStore(requireContext()), "", "Lectura", caravanas, "caravanas") { nombre ->
+            guardarSesionImportada(SessionFileStore(requireContext()), "", "Lectura", lineas, "caravanas") { nombre ->
                 android.widget.Toast.makeText(
                     requireContext(), "Sesión \"$nombre\" guardada en el dispositivo", android.widget.Toast.LENGTH_LONG
                 ).show()
@@ -171,14 +186,16 @@ class SendFragment : Fragment() {
     /** Saca de la lista las caravanas con formato inválido; después hay que volver a enviar. */
     private fun eliminarInvalidas() {
         val antes = caravanas.size
-        caravanas = caravanas.filter { com.gestiontraza.app.data.FormatoCaravana.esValida(it) }
+        lineas = lineas.filter { com.gestiontraza.app.data.FormatoCaravana.esValida(CaravanaSexo.codigo(it)) }
+        caravanas = CaravanaSexo.codigos(lineas)
+        sexos = CaravanaSexo.mapa(lineas)
         val quitadas = antes - caravanas.size
         if (caravanas.isEmpty()) {
             android.widget.Toast.makeText(requireContext(), "No quedaron caravanas válidas", android.widget.Toast.LENGTH_LONG).show()
             findNavController().navigateUp()
             return
         }
-        caravanasJson = JSONArray(caravanas).toString()
+        caravanasJson = JSONArray(lineas).toString()
         val n = caravanas.size
         binding.tvResumen.text = "$n caravana${if (n != 1) "s" else ""} válida${if (n != 1) "s" else ""}"
         android.widget.Toast.makeText(
@@ -216,7 +233,7 @@ class SendFragment : Fragment() {
             Unit
         }
         val aviso = when {
-            !verificacionCompleta || dteVerificado != dte.split("-")[0].trim() && dteVerificado != dte ->
+            !verificacionCompleta || dteVerificado != NumeroDte.nueve(dte) ->
                 "Las ${caravanas.size} caravanas no fueron verificadas contra el origen del DTe $dte."
             sinCoincidirVerif > 0 ->
                 "$sinCoincidirVerif caravana(s) no coinciden con el origen del DTe $dte o no se pudieron verificar."
@@ -343,7 +360,8 @@ class SendFragment : Fragment() {
                     caravanas = caravanas,
                     lat = lastLat,
                     lon = lastLon,
-                    cuentaId = session.cuentaActivaId
+                    cuentaId = session.cuentaActivaId,
+                    sexos = sexos
                 )
             )
             showPending("Sin conexión — ${caravanas.size} caravanas guardadas como pendiente")
@@ -363,14 +381,16 @@ class SendFragment : Fragment() {
                         caravanas  = caravanas,
                         lat        = lastLat,
                         lon        = lastLon,
-                        senasaEnv  = session.senasaEnv
+                        senasaEnv  = session.senasaEnv,
+                        sexos      = sexos
                     )
                 } else {
                     ApiClient.enviarCaravanas(
                         baseUrl   = session.baseUrl(),
                         token     = session.token,
                         dte       = dtes.joinToString("|"),
-                        caravanas = caravanas
+                        caravanas = caravanas,
+                        sexos     = sexos
                     )
                 }
             }

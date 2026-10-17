@@ -302,7 +302,8 @@ class HomeFragment : Fragment() {
                                 caravanas = item.caravanas,
                                 lat = item.lat,
                                 lon = item.lon,
-                                senasaEnv = cred.senasaEnv
+                                senasaEnv = cred.senasaEnv,
+                                sexos = item.sexos
                             ).ok
                         } else {
                             ApiClient.enviarAWeb(
@@ -311,7 +312,8 @@ class HomeFragment : Fragment() {
                                 dte = item.dtes.joinToString("|"),
                                 caravanas = item.caravanas,
                                 tipo = "web",
-                                extra = mapOf("titulo" to item.titulo)
+                                extra = mapOf("titulo" to item.titulo),
+                                sexos = item.sexos
                             ).ok
                         }
                     }.getOrElse { false }

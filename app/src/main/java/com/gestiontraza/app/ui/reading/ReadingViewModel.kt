@@ -3,28 +3,66 @@ package com.gestiontraza.app.ui.reading
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-
-data class CaravanaItem(
-    val codigo: String,
-    val esDuplicado: Boolean
-)
+import com.gestiontraza.app.data.CaravanaSexo
 
 class ReadingViewModel : ViewModel() {
+
+    private val lista = LecturasLista()
 
     private val _caravanas = MutableLiveData<List<CaravanaItem>>(emptyList())
     val caravanas: LiveData<List<CaravanaItem>> = _caravanas
 
-    private val seen = mutableSetOf<String>()
+    /** True si en esta lectura se está registrando el sexo de cada caravana. */
+    private val _registrarSexo = MutableLiveData(false)
+    val registrarSexo: LiveData<Boolean> = _registrarSexo
+
+    /** Sexo ("M"/"H") que se asigna a las caravanas que se lean ahora; vacío si no hay. */
+    private val _sexoActual = MutableLiveData("")
+    val sexoActual: LiveData<String> = _sexoActual
+
+    fun activarSexo(sexoInicial: String) {
+        _sexoActual.value = CaravanaSexo.normalizar(sexoInicial)
+        _registrarSexo.value = true
+    }
+
+    fun desactivarSexo() {
+        _registrarSexo.value = false
+        _sexoActual.value = ""
+    }
+
+    fun elegirSexo(sexo: String) {
+        _sexoActual.value = CaravanaSexo.normalizar(sexo)
+    }
+
+    private fun publicar() {
+        _caravanas.value = lista.items()
+    }
 
     /** Devuelve true si el texto era un código válido y se agregó (o ya estaba, como duplicado). */
-    fun addRaw(raw: String): Boolean {
+    fun addRaw(raw: String): Boolean =
+        addRaw(raw, if (_registrarSexo.value == true) _sexoActual.value.orEmpty() else "")
+
+    fun addRaw(raw: String, sexo: String): Boolean {
         val codigo = normalize(raw) ?: return false
-        val esDup = seen.contains(codigo)
-        if (!esDup) seen.add(codigo)
-        val current = _caravanas.value?.toMutableList() ?: mutableListOf()
-        current.add(0, CaravanaItem(codigo, esDup))
-        _caravanas.value = current
+        lista.agregar(codigo, sexo)
+        publicar()
         return true
+    }
+
+    fun eliminar(id: Long) {
+        lista.eliminar(id)
+        publicar()
+    }
+
+    /**
+     * Carga las líneas de una sesión guardada: "código" o "código,M". Lo que no trae sexo se
+     * lee como siempre (puede traer varios códigos pegados o separados).
+     */
+    fun addLineas(lineas: List<String>) {
+        lineas.forEach { linea ->
+            val sexo = CaravanaSexo.sexo(linea)
+            if (sexo.isNotEmpty()) addRaw(CaravanaSexo.codigo(linea), sexo) else addTexto(linea)
+        }
     }
 
     /**
@@ -49,21 +87,26 @@ class ReadingViewModel : ViewModel() {
         return agregado
     }
 
-    fun validas(): List<String> =
-        _caravanas.value?.filter { !it.esDuplicado }?.map { it.codigo } ?: emptyList()
+    /** Una línea por caravana válida: "código" o "código,M" si tiene sexo leído. Más reciente primero. */
+    fun validas(): List<String> = lista.validas().map { CaravanaSexo.linea(it.codigo, it.sexo) }
 
     fun duplicadas(): List<String> =
         _caravanas.value?.filter { it.esDuplicado }?.map { it.codigo }?.distinct() ?: emptyList()
 
+    /** Caravanas leídas más de una vez con sexos distintos. */
+    fun conflictosDeSexo(): List<String> = lista.conflictos()
+
     /** Solo cuenta las válidas (no duplicadas) */
-    fun totalValidas(): Int = validas().size
+    fun totalValidas(): Int = lista.validas().size
 
     /** Total incluyendo duplicadas (para mostrar en lista) */
     fun totalLista(): Int = _caravanas.value?.size ?: 0
 
     fun reset() {
-        seen.clear()
-        _caravanas.value = emptyList()
+        lista.limpiar()
+        _registrarSexo.value = false
+        _sexoActual.value = ""
+        publicar()
     }
 
     private fun normalize(raw: String): String? {

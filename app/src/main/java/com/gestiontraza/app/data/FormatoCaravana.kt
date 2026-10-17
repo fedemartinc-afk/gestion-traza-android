@@ -22,6 +22,10 @@ object FormatoCaravana {
      * vista en vez de adivinar el resto del número.
      */
     fun normalizarImportada(raw: String): String {
+        // Línea con sexo ("código,M"): se corrige el código y se conserva el sexo.
+        if (raw.contains(',')) {
+            return CaravanaSexo.linea(normalizarImportada(CaravanaSexo.codigo(raw)), CaravanaSexo.sexo(raw))
+        }
         val limpio = normalizar(raw)
         if (esValida(limpio)) return limpio
         if (CATORCE_SIN_CERO.matches(limpio)) {

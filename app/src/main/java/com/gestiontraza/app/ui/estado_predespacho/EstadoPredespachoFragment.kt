@@ -26,6 +26,12 @@ import com.gestiontraza.app.data.SenasaClient
 import com.gestiontraza.app.data.SessionManager
 import com.gestiontraza.app.databinding.FragmentEstadoPredespachoBinding
 import com.gestiontraza.app.ui.estado.FilaEstadoCaravana
+import com.gestiontraza.app.data.CaravanaSexo
+import com.gestiontraza.app.ui.estado.agregarLinea
+import com.gestiontraza.app.ui.estado.mostrarFilaSexo
+import com.gestiontraza.app.ui.estado.razonConSexo
+import com.gestiontraza.app.ui.estado.resumenComparacionSexo
+import com.gestiontraza.app.ui.estado.sube
 import com.gestiontraza.app.ui.estado.aplicarMascaraRenspa
 import com.gestiontraza.app.ui.estado.compartirEstadoCaravanas
 import com.gestiontraza.app.ui.estado.mostrarDialogoAgregarCaravanas
@@ -44,6 +50,8 @@ class EstadoPredespachoFragment : Fragment() {
     private val args: EstadoPredespachoFragmentArgs by navArgs()
     private lateinit var session: SessionManager
     private var caravanas: MutableList<String> = mutableListOf()
+    // Sexo leído por código (si se registró al leer): se compara contra el de SIGSA.
+    private var sexosLeidos: Map<String, String> = emptyMap()
 
     data class ResultItem(
         val codigo: String,
@@ -69,7 +77,9 @@ class EstadoPredespachoFragment : Fragment() {
         super.onViewCreated(view, saved)
         session = SessionManager(requireContext())
         val arr = JSONArray(args.caravanas)
-        caravanas = (0 until arr.length()).map { arr.getString(it) }.toMutableList()
+        val lineas = (0 until arr.length()).map { arr.getString(it) }
+        caravanas = CaravanaSexo.codigos(lineas).toMutableList()
+        sexosLeidos = CaravanaSexo.mapa(lineas)
         binding.tvContadorBar.text = "${caravanas.size} caravanas"
 
         binding.etRenspa.aplicarMascaraRenspa()
@@ -97,10 +107,13 @@ class EstadoPredespachoFragment : Fragment() {
         }
     }
 
+    private fun coincidencia(i: ResultItem) =
+        if (i.datosOk) CaravanaSexo.comparar(sexosLeidos[i.codigo], i.sexo) else null
+
     private fun compartir(soloValidas: Boolean?) {
         compartirEstadoCaravanas(
             "Estado para Predespacho",
-            resultados.map { FilaEstadoCaravana(it.codigo, it.ok, it.razon) },
+            resultados.map { FilaEstadoCaravana(it.codigo, it.ok, razonConSexo(it.razon, sexosLeidos[it.codigo], it.sexo, it.datosOk)) },
             soloValidas
         )
     }
@@ -232,7 +245,8 @@ class EstadoPredespachoFragment : Fragment() {
     private fun mostrarResultados(itemsSinOrdenar: List<ResultItem>) {
         // Las que no cumplen los requisitos van primero, para que se vean sin
         // tener que desplazarse; entre sí conservan el orden en que llegaron.
-        val items = itemsSinOrdenar.sortedBy { if (it.ok) 1 else 0 }
+        // Sin datos / inválidas primero, después las que no coinciden en sexo, al final el resto.
+        val items = itemsSinOrdenar.sortedBy { when { !it.ok -> 0; coincidencia(it).sube() -> 1; else -> 2 } }
         val visibles = when (filtroValidez) {
             null -> items
             true -> items.filter { it.ok }
@@ -268,6 +282,7 @@ class EstadoPredespachoFragment : Fragment() {
                     } else {
                         tvDetalle.visibility = View.GONE
                     }
+                    findViewById<TextView>(R.id.tvSexoComp).mostrarFilaSexo(item.sexo, sexosLeidos[item.codigo], item.datosOk)
                     val btnEliminar = findViewById<TextView>(R.id.btnEliminar)
                     btnEliminar.visibility = View.VISIBLE
                     btnEliminar.setOnClickListener {
@@ -330,6 +345,7 @@ class EstadoPredespachoFragment : Fragment() {
 
         binding.tvEntidadesCount.text = "Entidades (RENSPA/feria)\n${entidades.size}"
         binding.tvSexoCount.text = "Macho $machos   Hembra $hembras   s/sexo $sinSexo"
+        binding.tvSexoCount.agregarLinea(resumenComparacionSexo(requireContext(), conDatos.map { coincidencia(it) }))
         binding.panelContadores.visibility = if (items.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
@@ -404,7 +420,7 @@ class EstadoPredespachoFragment : Fragment() {
             val result = withContext(Dispatchers.IO) {
                 ApiClient.enviarAWeb(
                     session.baseUrl(), session.token, "", caravanas,
-                    "verificacion", mapOf("titulo" to "Verificar estado para Predespacho")
+                    "verificacion", mapOf("titulo" to "Verificar estado para Predespacho"), sexos = sexosLeidos
                 )
             }
             setResultLoading(false)

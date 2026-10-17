@@ -203,7 +203,7 @@
             android:id="@+id/btnImportarSesiones"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:text="📥  Importar sesiones"
+            android:text="📥  Ver / importar sesiones"
             android:textSize="14sp"
             style="@style/BtnSecondary"
             android:layout_marginTop="12dp"/>
@@ -293,7 +293,7 @@
                 android:id="@+id/btnImportarSesionesProductor"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:text="📥  Importar sesiones"
+                android:text="📥  Ver / importar sesiones"
                 android:textSize="14sp"
                 style="@style/BtnSecondary"/>
 

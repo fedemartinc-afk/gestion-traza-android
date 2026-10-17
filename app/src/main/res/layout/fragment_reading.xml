@@ -106,6 +106,51 @@
 
     </RelativeLayout>
 
+    <!-- Barra fija de sexo: aparece solo si se eligió registrar el sexo de cada caravana -->
+    <LinearLayout
+        android:id="@+id/barraSexo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp"
+        android:background="@color/blanco"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Sexo de las caravanas que se leen:"
+            android:textSize="12sp"
+            android:textColor="@color/gris_texto"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSexoM"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="64dp"
+            android:text="M"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:focusable="false"
+            app:cornerRadius="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_marginEnd="6dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSexoH"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="64dp"
+            android:text="H"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:focusable="false"
+            app:cornerRadius="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+    </LinearLayout>
+
     <!-- Campo oculto que recibe input del lector HID (actúa como teclado BT) -->
     <EditText
         android:id="@+id/etHidInput"
@@ -145,6 +190,15 @@
         android:gravity="center_vertical"
         android:background="@color/blanco">
 
+        <!-- Entrada manual (se oculta si el ajuste manual no está activo) -->
+        <LinearLayout
+            android:id="@+id/llEntradaManual"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -178,11 +232,14 @@
             app:cornerRadius="8dp"
             android:layout_marginEnd="6dp"/>
 
+        </LinearLayout>
+
+        <!-- Reemplaza al botón Agregar: elegir si además se registra el sexo -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAgregar"
+            android:id="@+id/btnSexo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Agregar"
+            android:text="Sexo"
             style="@style/BtnPrimary"
             app:cornerRadius="8dp"/>
     </LinearLayout>

@@ -22,9 +22,16 @@ import com.gestiontraza.app.data.SenasaClient
 import com.gestiontraza.app.data.SessionManager
 import com.gestiontraza.app.databinding.FragmentUbicacionActualBinding
 import com.gestiontraza.app.ui.estado.compartirXlsx
+import com.gestiontraza.app.data.CaravanaSexo
+import com.gestiontraza.app.ui.estado.agregarLinea
+import com.gestiontraza.app.ui.estado.mostrarFilaSexo
+import com.gestiontraza.app.ui.estado.razonConSexo
+import com.gestiontraza.app.ui.estado.resumenComparacionSexo
+import com.gestiontraza.app.ui.estado.sube
+import com.gestiontraza.app.ui.estado.mostrarSexoComparado
+import com.gestiontraza.app.ui.estado.textoComparacionSexo
 import com.gestiontraza.app.ui.estado.mostrarDialogoAgregarCaravanas
 import com.gestiontraza.app.ui.estado.mostrarSelectorValidez
-import com.gestiontraza.app.ui.estado.textoBotonFiltroValidez
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,6 +49,8 @@ class UbicacionActualFragment : Fragment() {
 
     private lateinit var session: SessionManager
     private var caravanas: MutableList<String> = mutableListOf()
+    // Sexo leído por código (si se registró al leer): se compara contra el de SIGSA.
+    private var sexosLeidos: Map<String, String> = emptyMap()
 
     private data class ResultItem(
         val codigo: String,
@@ -72,7 +81,9 @@ class UbicacionActualFragment : Fragment() {
         session = SessionManager(requireContext())
 
         val arr = JSONArray(args.caravanas)
-        caravanas = (0 until arr.length()).map { arr.getString(it) }.toMutableList()
+        val lineas = (0 until arr.length()).map { arr.getString(it) }
+        caravanas = CaravanaSexo.codigos(lineas).toMutableList()
+        sexosLeidos = CaravanaSexo.mapa(lineas)
         binding.tvContadorBar.text = "${caravanas.size} caravanas"
 
         binding.btnBack.setOnClickListener { findNavController().navigateUp() }
@@ -85,6 +96,10 @@ class UbicacionActualFragment : Fragment() {
                 filtroValidez = it
                 mostrarResultados()
             }
+        }
+        // Vuelve al inicio para empezar una nueva lectura de caravanas.
+        binding.btnLeerCaravanas.setOnClickListener {
+            findNavController().navigate(R.id.action_ubicacion_to_home)
         }
         binding.btnAgregarCaravana.setOnClickListener {
             mostrarDialogoAgregarCaravanas({ caravanas }) { nuevas ->
@@ -202,11 +217,11 @@ class UbicacionActualFragment : Fragment() {
         // y el resumen siguen contando sobre el total, sin filtrar.
         val filtro = filtroRenspa
         val validez = filtroValidez
-        // Las que no tienen datos van primero; entre sí conservan su orden.
+        // Primero las que no tienen datos, después las que no coinciden en sexo; entre sí conservan su orden.
         val visibles = resultados
             .filter { (filtro == null || filtro.contains(it.renspaKey())) &&
                 (validez == null || it.ok == validez) }
-            .sortedBy { if (it.ok) 1 else 0 }
+            .sortedBy { when { !it.ok -> 0; it.coincidenciaSexo().sube() -> 1; else -> 2 } }
 
         @Suppress("UNCHECKED_CAST")
         (binding.recyclerResultados.adapter as ListAdapter<ResultItem, RecyclerView.ViewHolder>)
@@ -219,6 +234,9 @@ class UbicacionActualFragment : Fragment() {
      *  tienen datos de SENASA (sin RENSPA informado o la consulta falló) — todas van
      *  juntas al grupo "Sin RENSPA". */
     private fun ResultItem.renspaKey() = if (ok) renspa.trim() else ""
+
+    private fun ResultItem.coincidenciaSexo() =
+        if (ok) CaravanaSexo.comparar(sexosLeidos[codigo], sexo) else null
 
     /** Entidades (RENSPA/feria) distintas entre las caravanas ya ubicadas, con
      *  cuántas caravanas tiene cada una — para el selector múltiple. Las que no
@@ -285,7 +303,9 @@ class UbicacionActualFragment : Fragment() {
     }
 
     private fun exportarXlsx(items: List<ResultItem>) {
-        val encabezados = listOf("Caravana", "RENSPA", "Establecimiento", "Titular", "Sexo", "Raza", "Estado")
+        val conSexoLeido = sexosLeidos.isNotEmpty()
+        val encabezados = listOf("Caravana", "RENSPA", "Establecimiento", "Titular", "Sexo", "Raza", "Estado") +
+            if (conSexoLeido) listOf("Sexo leído", "Comparación sexo") else emptyList()
         val filas = items.map { item ->
             listOf(
                 item.codigo,
@@ -294,8 +314,11 @@ class UbicacionActualFragment : Fragment() {
                 if (item.ok) item.titular else "",
                 if (item.ok) item.sexo else "",
                 if (item.ok) item.raza else "",
-                if (item.ok) "OK" else "SIN DATOS" + if (item.error.isNotBlank()) ": ${item.error}" else ""
-            )
+                if (item.ok) "Válida" else "Inválida"
+            ) + if (conSexoLeido) listOf(
+                sexosLeidos[item.codigo].orEmpty(),
+                textoComparacionSexo(sexosLeidos[item.codigo], item.sexo, item.ok)
+            ) else emptyList()
         }
         compartirXlsx("Ubicación actual", encabezados, filas)
     }
@@ -327,11 +350,18 @@ class UbicacionActualFragment : Fragment() {
         else
             "RENSPA/REMATE FERIA ▾\n${filtro.size} de ${entidades.size}"
         binding.tvSexoCount.text = "Macho $machos   Hembra $hembras   s/sexo $sinSexo"
+        binding.tvSexoCount.agregarLinea(resumenComparacionSexo(requireContext(), exitosas.map { it.coincidenciaSexo() }))
         binding.panelContadores.visibility = if (resultados.isNotEmpty()) View.VISIBLE else View.GONE
         binding.btnCompartirEstado.visibility = if (resultados.isNotEmpty()) View.VISIBLE else View.GONE
         binding.btnAgregarCaravana.visibility = if (resultados.isNotEmpty()) View.VISIBLE else View.GONE
         binding.btnFiltroValidez.visibility = if (resultados.isNotEmpty()) View.VISIBLE else View.GONE
-        binding.btnFiltroValidez.text = textoBotonFiltroValidez(filtroValidez)
+        binding.btnLeerCaravanas.visibility = if (resultados.isNotEmpty()) View.VISIBLE else View.GONE
+        // Botón corto para que entre al lado de Compartir: "Filtrar" o el filtro activo.
+        binding.btnFiltroValidez.text = when (filtroValidez) {
+            null -> "🔎  Filtrar"
+            true -> "🔎  Solo válidas ▾"
+            false -> "🔎  Solo inválidas ▾"
+        }
     }
 
     private fun crearAdapter() = object : ListAdapter<ResultItem, RecyclerView.ViewHolder>(
@@ -351,7 +381,11 @@ class UbicacionActualFragment : Fragment() {
             val item = getItem(position)
             holder.itemView.apply {
                 setBackgroundResource(
-                    if (item.ok) R.drawable.bg_caravana_ok else R.drawable.bg_caravana_dup
+                    when {
+                        !item.ok -> R.drawable.bg_caravana_dup
+                        item.coincidenciaSexo().sube() -> R.drawable.bg_caravana_no_match
+                        else -> R.drawable.bg_caravana_ok
+                    }
                 )
                 findViewById<TextView>(R.id.tvCodigo).text = item.codigo
                 findViewById<TextView>(R.id.btnEliminar).setOnClickListener { eliminar(item.codigo) }
@@ -365,7 +399,7 @@ class UbicacionActualFragment : Fragment() {
                     if (item.ok) item.establecimiento.ifBlank { "sin datos" } else "—"
                 findViewById<TextView>(R.id.tvTitular).text =
                     if (item.ok) item.titular.ifBlank { "sin datos" } else "—"
-                findViewById<TextView>(R.id.tvSexo).text = if (item.ok) item.sexo.ifBlank { "-" } else "-"
+                findViewById<TextView>(R.id.tvSexo).mostrarSexoComparado(item.sexo, sexosLeidos[item.codigo], item.ok)
                 findViewById<TextView>(R.id.tvRaza).text = if (item.ok) item.raza.ifBlank { "-" } else "-"
             }
         }

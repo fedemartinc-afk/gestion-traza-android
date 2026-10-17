@@ -5,6 +5,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import com.gestiontraza.app.data.CaravanaSexo
 import com.gestiontraza.app.data.FormatoCaravana
 import com.gestiontraza.app.data.SessionFileStore
 
@@ -52,7 +53,7 @@ fun Fragment.guardarSesionImportada(
 /** Avisa (sin bloquear) si, después de corregir espacios y el "0" inicial, quedan
  *  caravanas que no cumplen el formato 0320 + 11 dígitos. */
 private fun Fragment.avisarFormatoImportacion(lineas: List<String>) {
-    val invalidas = FormatoCaravana.invalidas(lineas)
+    val invalidas = FormatoCaravana.invalidas(CaravanaSexo.codigos(lineas))
     if (invalidas.isEmpty()) return
     val n = invalidas.size
     val ejemplos = invalidas.take(5).joinToString(", ")

@@ -1,5 +1,7 @@
 package com.gestiontraza.app.ui.reading
 
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -45,6 +47,12 @@ class ReadingFragment : Fragment() {
     private var debounceHid: Runnable? = null
     private var tecladoQwerty = false
 
+    // Avisos sonoros de lectura: pip normal y otro sonido si la caravana ya estaba leída.
+    private var tonos: ToneGenerator? = null
+    private var ultimoTonoMs = 0L
+    private var tamanoAnterior = -1
+
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, saved: Bundle?): View {
         _binding = FragmentReadingBinding.inflate(inflater, container, false)
         return binding.root
@@ -61,14 +69,18 @@ class ReadingFragment : Fragment() {
         binding.btnBack.setOnClickListener { volverAtras() }
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) { volverAtras() }
 
-        adapter = CaravanaAdapter()
+        adapter = CaravanaAdapter { item -> confirmarEliminar(item) }
         binding.recyclerCaravanas.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerCaravanas.adapter = adapter
 
-        // Ocultar entrada manual si el ajuste no está activo
+        // Ocultar entrada manual si el ajuste no está activo; el botón Sexo queda siempre.
         if (!session.manualCaravanas) {
-            binding.panelManualCaravanas.visibility = View.GONE
+            binding.llEntradaManual.visibility = View.GONE
+            binding.btnSexo.layoutParams = binding.btnSexo.layoutParams.apply {
+                width = ViewGroup.LayoutParams.MATCH_PARENT
+            }
         }
+        setupSexo()
 
         // Ícono de estado del lector: gris hasta que llega la primera lectura
         // válida (sea por HID o por SPP), verde de ahí en adelante. No hay forma
@@ -77,6 +89,12 @@ class ReadingFragment : Fragment() {
         binding.ivBtStatus.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gris_texto))
 
         vm.caravanas.observe(viewLifecycleOwner) { list ->
+            // Pip por cada lectura nueva (no al eliminar ni al volver a abrir la pantalla);
+            // si la caravana ya estaba leída, suena otro aviso.
+            if (tamanoAnterior >= 0 && list.size > tamanoAnterior && list.isNotEmpty()) {
+                sonarLectura(list[0].esDuplicado)
+            }
+            tamanoAnterior = list.size
             adapter.submitList(list)
             val validas = vm.totalValidas()
             val dups = list.count { it.esDuplicado }
@@ -106,6 +124,17 @@ class ReadingFragment : Fragment() {
             val validas = vm.validas()
             if (validas.isEmpty()) {
                 android.widget.Toast.makeText(requireContext(), "No hay caravanas válidas", android.widget.Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            // Misma caravana leída con sexos distintos: hay que eliminar una antes de seguir.
+            val conflictos = vm.conflictosDeSexo()
+            if (conflictos.isNotEmpty()) {
+                val lista = conflictos.joinToString("\n• ", prefix = "• ")
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Caravana duplicada con sexos distintos")
+                    .setMessage("Eliminá una de las lecturas antes de finalizar la lectura:\n\n$lista")
+                    .setPositiveButton("Entendido", null)
+                    .show()
                 return@setOnClickListener
             }
             val duplicadas = vm.duplicadas()
@@ -194,13 +223,15 @@ class ReadingFragment : Fragment() {
             }
         }
 
-        binding.btnAgregar.setOnClickListener {
+        // Agrega lo escrito (Enter del lector, acción "Listo" del teclado).
+        val agregarManual = {
             val codigo = et.text?.toString()?.trim() ?: ""
-            if (codigo.isEmpty()) return@setOnClickListener
-            if (vm.addRaw(codigo)) et.setText("")
-            // Ocultar teclado y devolver foco al HID
-            val imm = requireContext().getSystemService(InputMethodManager::class.java)
-            imm.hideSoftInputFromWindow(et.windowToken, 0)
+            if (codigo.isNotEmpty()) {
+                if (vm.addRaw(codigo)) et.setText("")
+                // Ocultar teclado y devolver foco al HID
+                val imm = requireContext().getSystemService(InputMethodManager::class.java)
+                imm.hideSoftInputFromWindow(et.windowToken, 0)
+            }
         }
 
         // Teclado numérico por defecto (los códigos son dígitos); botón para
@@ -259,7 +290,7 @@ class ReadingFragment : Fragment() {
             if (keyCode == android.view.KeyEvent.KEYCODE_ENTER &&
                 event.action == android.view.KeyEvent.ACTION_DOWN) {
                 debounceManual?.let { debounceHandler.removeCallbacks(it) }
-                binding.btnAgregar.performClick()
+                agregarManual()
                 true
             } else false
         }
@@ -270,7 +301,7 @@ class ReadingFragment : Fragment() {
                 actionId == EditorInfo.IME_ACTION_NEXT ||
                 actionId == EditorInfo.IME_ACTION_UNSPECIFIED) {
                 debounceManual?.let { debounceHandler.removeCallbacks(it) }
-                binding.btnAgregar.performClick()
+                agregarManual()
                 true
             } else false
         }
@@ -335,6 +366,75 @@ class ReadingFragment : Fragment() {
         }
     }
 
+    /** Botón Sexo + barra fija M/H: el estado vive en el ViewModel. */
+    private fun setupSexo() {
+        binding.btnSexo.setOnClickListener { preguntarRegistrarSexo() }
+        binding.btnSexoM.setOnClickListener { vm.elegirSexo("M"); devolverFoco() }
+        binding.btnSexoH.setOnClickListener { vm.elegirSexo("H"); devolverFoco() }
+
+        vm.registrarSexo.observe(viewLifecycleOwner) { activo ->
+            binding.barraSexo.visibility = if (activo) View.VISIBLE else View.GONE
+            binding.btnSexo.text = if (activo) "Sexo ✓" else "Sexo"
+        }
+        vm.sexoActual.observe(viewLifecycleOwner) { sexo ->
+            marcarBotonSexo(binding.btnSexoM, sexo == "M")
+            marcarBotonSexo(binding.btnSexoH, sexo == "H")
+        }
+    }
+
+    private fun marcarBotonSexo(b: com.google.android.material.button.MaterialButton, activo: Boolean) {
+        val ctx = requireContext()
+        b.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            if (activo) ContextCompat.getColor(ctx, R.color.verde_oscuro) else android.graphics.Color.TRANSPARENT
+        )
+        b.setTextColor(if (activo) ContextCompat.getColor(ctx, R.color.blanco) else ContextCompat.getColor(ctx, R.color.verde_oscuro))
+    }
+
+    private fun preguntarRegistrarSexo() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Registrar sexo")
+            .setMessage("Además de registrar las caravanas, ¿querés registrar el sexo de cada una?")
+            .setPositiveButton("Sí") { _, _ -> elegirSexoInicial() }
+            .setNegativeButton("No") { _, _ -> vm.desactivarSexo(); devolverFoco() }
+            .setOnCancelListener { devolverFoco() }
+            .show()
+    }
+
+    private fun elegirSexoInicial() {
+        val opciones = arrayOf("M  —  Macho", "H  —  Hembra")
+        AlertDialog.Builder(requireContext())
+            .setTitle("Seleccioná el sexo de las caravanas que vas a leer")
+            .setItems(opciones) { _, i -> vm.activarSexo(if (i == 0) "M" else "H"); devolverFoco() }
+            .setOnCancelListener { devolverFoco() }
+            .show()
+    }
+
+    private fun confirmarEliminar(item: CaravanaItem) {
+        val sexo = if (item.sexo.isNotEmpty()) " (${item.sexo})" else ""
+        AlertDialog.Builder(requireContext())
+            .setTitle("Eliminar caravana")
+            .setMessage("¿Eliminar esta lectura de la lista?\n\n${item.codigo}$sexo")
+            .setPositiveButton("Eliminar") { _, _ -> vm.eliminar(item.id); devolverFoco() }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    /** Los botones no deben quitarle el foco al campo que recibe el lector. */
+    private fun devolverFoco() {
+        val et = if (session.manualCaravanas) binding.etManual else binding.etHidInput
+        et.post { et.requestFocus() }
+    }
+
+    private fun sonarLectura(duplicada: Boolean) {
+        // En una carga masiva (pegado, importación) no se apilan los tonos.
+        val ahora = android.os.SystemClock.elapsedRealtime()
+        if (ahora - ultimoTonoMs < 80) return
+        ultimoTonoMs = ahora
+        val tg = tonos ?: runCatching { ToneGenerator(AudioManager.STREAM_MUSIC, 90) }.getOrNull()?.also { tonos = it }
+        if (duplicada) tg?.startTone(ToneGenerator.TONE_SUP_ERROR, 350)
+        else tg?.startTone(ToneGenerator.TONE_PROP_BEEP, 120)
+    }
+
     override fun onResume() {
         super.onResume()
         binding.etHidInput.requestFocus()
@@ -343,6 +443,8 @@ class ReadingFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         debounceHandler.removeCallbacksAndMessages(null)
+        tonos?.release()
+        tonos = null
         // La conexión SPP es compartida (BtConnectionViewModel): no se corta al
         // salir de esta pantalla, sigue disponible en Inicio y otros módulos.
         _binding = null

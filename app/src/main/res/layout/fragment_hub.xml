@@ -147,16 +147,6 @@
             android:layout_marginBottom="10dp"/>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnUbicacionActual"
-            android:layout_width="match_parent"
-            android:layout_height="68dp"
-            android:text="📍  Verificar ubicación actual"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            style="@style/BtnPrimary"
-            android:layout_marginBottom="10dp"/>
-
-        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnVerificarOrigen"
             android:layout_width="match_parent"
             android:layout_height="68dp"
@@ -186,6 +176,16 @@
             style="@style/BtnPrimary"
             android:layout_marginBottom="10dp"/>
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnUbicacionActual"
+            android:layout_width="match_parent"
+            android:layout_height="68dp"
+            android:text="📍  Ubicación actual caravana"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            style="@style/BtnPrimary"
+            android:layout_marginBottom="10dp"/>
+
         <!-- Guarda la lectura en "Sesiones guardadas en dispositivo" -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCrearSesion"
@@ -194,9 +194,18 @@
             android:text="🗂  Crear sesión"
             android:textSize="15sp"
             style="@style/BtnPrimary"
-            android:layout_marginBottom="16dp"/>
+            android:layout_marginBottom="8dp"/>
 
-        <!-- Solo perfil productor: mismo botón que en el perfil consignatario -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVerSesiones"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="🗂  Ver sesiones en este dispositivo"
+            android:textSize="15sp"
+            style="@style/BtnPrimary"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Mismo orden que en el perfil consignatario -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEnviarCierre"
             android:layout_width="match_parent"
@@ -216,11 +225,12 @@
             android:gravity="center"
             android:layout_marginBottom="16dp"/>
 
+        <!-- Vuelve al inicio para empezar una nueva lectura -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnVerSesiones"
+            android:id="@+id/btnLeerCaravanas"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="🗂  Ver sesiones en este dispositivo"
+            android:text="Leer caravanas"
             android:textSize="15sp"
             style="@style/BtnPrimary"
             android:layout_marginBottom="16dp"/>

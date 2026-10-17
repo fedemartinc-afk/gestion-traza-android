@@ -23,6 +23,12 @@ import com.gestiontraza.app.data.SenasaClient
 import com.gestiontraza.app.data.SessionManager
 import com.gestiontraza.app.databinding.FragmentVerificarOrigenBinding
 import com.gestiontraza.app.ui.estado.FilaEstadoCaravana
+import com.gestiontraza.app.data.CaravanaSexo
+import com.gestiontraza.app.ui.estado.agregarLinea
+import com.gestiontraza.app.ui.estado.mostrarFilaSexo
+import com.gestiontraza.app.ui.estado.razonConSexo
+import com.gestiontraza.app.ui.estado.resumenComparacionSexo
+import com.gestiontraza.app.ui.estado.sube
 import com.gestiontraza.app.ui.estado.compartirEstadoCaravanas
 import com.gestiontraza.app.ui.estado.mostrarSelectorValidez
 import com.gestiontraza.app.ui.estado.textoBotonFiltroValidez
@@ -41,6 +47,8 @@ class VerificarOrigenFragment : Fragment() {
     private val args: VerificarOrigenFragmentArgs by navArgs()
     private lateinit var session: SessionManager
     private lateinit var caravanas: List<String>
+    // Sexo leído por código (si se registró al leer): se compara contra el de SIGSA.
+    private var sexosLeidos: Map<String, String> = emptyMap()
     // Cuántas caravanas no coincidieron en la última verificación (para avisar al enviar).
     private var sinCoincidirUltima = 0
     private var ultimosResultados: List<ResultItem> = emptyList()
@@ -72,7 +80,9 @@ class VerificarOrigenFragment : Fragment() {
         super.onViewCreated(view, saved)
         session = SessionManager(requireContext())
         val arr = JSONArray(args.caravanas)
-        caravanas = (0 until arr.length()).map { arr.getString(it) }
+        val lineas = (0 until arr.length()).map { arr.getString(it) }
+        caravanas = CaravanaSexo.codigos(lineas)
+        sexosLeidos = CaravanaSexo.mapa(lineas)
         binding.tvContadorBar.text = "${caravanas.size} caravanas"
         binding.btnVolver.setOnClickListener { findNavController().navigateUp() }
 
@@ -125,11 +135,20 @@ class VerificarOrigenFragment : Fragment() {
     /** null = todas, true = solo las que coinciden, false = solo las que no. */
     private var filtroValidez: Boolean? = null
 
+    private fun coincidenciaSexo(i: ResultItem) =
+        if (i.datosOk) CaravanaSexo.comparar(sexosLeidos[i.codigo], i.sexo) else null
+
     private fun compartir(soloValidas: Boolean?) {
         compartirEstadoCaravanas(
             "Verificar Origen",
             ultimosResultados.map {
-                FilaEstadoCaravana(it.codigo, it.coincide, if (it.coincide) "" else "RENSPA actual: ${it.renspaActual.ifBlank { "sin datos" }}")
+                FilaEstadoCaravana(
+                    it.codigo, it.coincide,
+                    razonConSexo(
+                        if (it.coincide) "" else "RENSPA actual: ${it.renspaActual.ifBlank { "sin datos" }}",
+                        sexosLeidos[it.codigo], it.sexo, it.datosOk
+                    )
+                )
             },
             soloValidas
         )
@@ -237,7 +256,8 @@ class VerificarOrigenFragment : Fragment() {
     private fun mostrarResultados(resultadosSinOrdenar: List<ResultItem>) {
         // Las que no coinciden con el origen van primero, para que se vean sin
         // tener que desplazarse; entre sí conservan el orden en que llegaron.
-        val resultados = resultadosSinOrdenar.sortedBy { if (it.coincide) 1 else 0 }
+        // Las que no coinciden en sexo van justo después de las que no coinciden en origen.
+        val resultados = resultadosSinOrdenar.sortedBy { when { !it.coincide -> 0; coincidenciaSexo(it).sube() -> 1; else -> 2 } }
         val adapter = object : ListAdapter<ResultItem, RecyclerView.ViewHolder>(
             object : DiffUtil.ItemCallback<ResultItem>() {
                 override fun areItemsTheSame(a: ResultItem, b: ResultItem) = a.codigo == b.codigo
@@ -267,6 +287,7 @@ class VerificarOrigenFragment : Fragment() {
                     } else {
                         tvDetalle.visibility = View.GONE
                     }
+                    findViewById<TextView>(R.id.tvSexoComp).mostrarFilaSexo(item.sexo, sexosLeidos[item.codigo], item.datosOk)
                 }
             }
         }
@@ -323,6 +344,7 @@ class VerificarOrigenFragment : Fragment() {
 
         binding.tvEntidadesCount.text = "Entidades (RENSPA/feria)\n${entidades.size}"
         binding.tvSexoCount.text = "Macho $machos   Hembra $hembras   s/sexo $sinSexo"
+        binding.tvSexoCount.agregarLinea(resumenComparacionSexo(requireContext(), conDatos.map { coincidenciaSexo(it) }))
         binding.panelContadores.visibility = if (resultados.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
@@ -330,7 +352,7 @@ class VerificarOrigenFragment : Fragment() {
         setResultLoading(true)
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                ApiClient.enviarAWeb(session.baseUrl(), session.token, dte, caravanas, "verificacion", mapOf("titulo" to titulo))
+                ApiClient.enviarAWeb(session.baseUrl(), session.token, dte, caravanas, "verificacion", mapOf("titulo" to titulo), sexosLeidos)
             }
             setResultLoading(false)
             showResultado(result.ok, result.message)
@@ -346,7 +368,7 @@ class VerificarOrigenFragment : Fragment() {
             }
             if (result.ok) {
                 withContext(Dispatchers.IO) {
-                    ApiClient.enviarAWeb(session.baseUrl(), session.token, dte, caravanas, "cierre")
+                    ApiClient.enviarAWeb(session.baseUrl(), session.token, dte, caravanas, "cierre", sexos = sexosLeidos)
                 }
             }
             setResultLoading(false)

@@ -24,6 +24,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.LocationServices
 import com.gestiontraza.app.R
 import com.gestiontraza.app.data.ApiClient
+import com.gestiontraza.app.data.CaravanaSexo
+import com.gestiontraza.app.ui.estado.agregarLinea
+import com.gestiontraza.app.ui.estado.mostrarFilaSexo
+import com.gestiontraza.app.ui.estado.resumenComparacionSexo
+import com.gestiontraza.app.ui.estado.sube
 import com.gestiontraza.app.data.ConsultaConReintentos
 import com.gestiontraza.app.data.SenasaClient
 import com.gestiontraza.app.data.SessionManager
@@ -41,6 +46,8 @@ class CompararTRIFragment : Fragment() {
     private val args: CompararTRIFragmentArgs by navArgs()
     private lateinit var session: SessionManager
     private lateinit var caravanas: List<String>
+    // Sexo leído por código (si se registró al leer): se compara contra el de SIGSA.
+    private var sexosLeidos: Map<String, String> = emptyMap()
 
     private var lastLat: Double? = null
     private var lastLon: Double? = null
@@ -56,6 +63,12 @@ class CompararTRIFragment : Fragment() {
 
     private data class DatosCaravana(val renspa: String, val sexo: String, val ok: Boolean)
     private val datosParaContadores = mutableListOf<DatosCaravana>()
+    private var datosPorCodigo: Map<String, DatosCaravana> = emptyMap()
+
+    private fun coincidenciaSexo(codigo: String): CaravanaSexo.Coincidencia? {
+        val d = datosPorCodigo[codigo] ?: return null
+        return if (d.ok) CaravanaSexo.comparar(sexosLeidos[codigo], d.sexo) else null
+    }
 
     private val locationPermLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -79,7 +92,9 @@ class CompararTRIFragment : Fragment() {
         session = SessionManager(requireContext())
 
         val arr = JSONArray(args.caravanas)
-        caravanas = (0 until arr.length()).map { arr.getString(it) }
+        val lineas = (0 until arr.length()).map { arr.getString(it) }
+        caravanas = CaravanaSexo.codigos(lineas)
+        sexosLeidos = CaravanaSexo.mapa(lineas)
         binding.tvContadorBar.text = "${caravanas.size} leídas"
 
         if (args.dte.isNotBlank()) binding.etDte.setText(args.dte)
@@ -250,7 +265,10 @@ class CompararTRIFragment : Fragment() {
             datosParaContadores.add(DatosCaravana(estado.renspaActual, estado.sexo, estado.ok))
         }
         binding.tvProgreso.visibility = View.GONE
+        datosPorCodigo = caravanas.zip(datosParaContadores).toMap()
         actualizarContadores()
+        // Ya con el sexo de SIGSA: se muestra la comparación en cada fila y suben las que no coinciden.
+        mostrarResultados(todosResultados)
 
         val exitosas = caravanas.zip(datosParaContadores).filter { it.second.ok }.map { it.first }
         withContext(Dispatchers.IO) {
@@ -276,6 +294,7 @@ class CompararTRIFragment : Fragment() {
 
         binding.tvEntidadesCount.text = "Entidades (RENSPA/feria)\n${entidades.size}"
         binding.tvSexoCount.text = "Macho $machos   Hembra $hembras   s/sexo $sinSexo"
+        binding.tvSexoCount.agregarLinea(resumenComparacionSexo(requireContext(), caravanas.map { coincidenciaSexo(it) }))
         binding.panelContadores.visibility = if (datosParaContadores.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
@@ -300,8 +319,10 @@ class CompararTRIFragment : Fragment() {
 
     private fun mostrarResultados(sinOrdenar: List<ResultItem>) {
         todosResultados = sinOrdenar
-        // Rojas y azules (lo que no coincide) primero, verdes al final.
-        val ordenados = sinOrdenar.sortedBy { if (it.tipo == Tipo.VERDE) 1 else 0 }
+        // Rojas y azules (lo que no coincide) primero; después las verdes que no coinciden en sexo.
+        val ordenados = sinOrdenar.sortedBy {
+            when { it.tipo != Tipo.VERDE -> 0; coincidenciaSexo(it.codigo).sube() -> 1; else -> 2 }
+        }
         val resultados = filtroTipo?.let { f -> ordenados.filter { it.tipo == f } } ?: ordenados
         binding.btnFiltroTipo.visibility = if (sinOrdenar.isEmpty()) View.GONE else View.VISIBLE
         binding.btnFiltroTipo.text = when (filtroTipo) {
@@ -346,6 +367,9 @@ class CompararTRIFragment : Fragment() {
                         }
                     }
                     findViewById<TextView>(R.id.tvCodigo).text = item.codigo
+                    val d = datosPorCodigo[item.codigo]
+                    findViewById<TextView>(R.id.tvSexoComp)
+                        .mostrarFilaSexo(d?.sexo.orEmpty(), sexosLeidos[item.codigo], d?.ok == true)
                 }
             }
         }
@@ -375,7 +399,8 @@ class CompararTRIFragment : Fragment() {
                     dte       = dte,
                     caravanas = caravanas,
                     tipo      = "verificacion",
-                    extra     = mapOf("titulo" to "Comparar vs TRI")
+                    extra     = mapOf("titulo" to "Comparar vs TRI"),
+                    sexos     = sexosLeidos
                 )
             }
             setResultLoading(false)
@@ -399,7 +424,8 @@ class CompararTRIFragment : Fragment() {
                     caravanas  = caravanas,
                     lat        = lastLat,
                     lon        = lastLon,
-                    senasaEnv  = session.senasaEnv
+                    senasaEnv  = session.senasaEnv,
+                    sexos      = sexosLeidos
                 )
             }
             setResultLoading(false)
