@@ -140,6 +140,9 @@
             android:id="@+id/action_send_to_enviarWeb"
             app:destination="@id/enviarWebFragment"/>
         <action
+            android:id="@+id/action_send_to_verificarOrigen"
+            app:destination="@id/verificarOrigenFragment"/>
+        <action
             android:id="@+id/action_send_to_compararTri"
             app:destination="@id/compararTriFragment"/>
         <action

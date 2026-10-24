@@ -113,7 +113,10 @@ class SendFragment : Fragment() {
             findNavController().navigate(R.id.action_send_to_home)
         }
 
-        binding.btnVerificarOrigen.setOnClickListener { pedirDte(ModoDte.VERIFICAR) }
+        // Igual que en el perfil productor: se pasa a la pantalla de Verificar origen, donde se ingresa el DTe y se verifica.
+        binding.btnVerificarOrigen.setOnClickListener {
+            findNavController().navigate(SendFragmentDirections.actionSendToVerificarOrigen(caravanasJson))
+        }
         binding.btnEnviarCierre.setOnClickListener { pedirDte(ModoDte.CIERRE) }
 
         // Guarda la lectura en "Sesiones guardadas en dispositivo", con el nombre que se elija.
