@@ -2,18 +2,15 @@ package com.gestiontraza.app.bluetooth
 
 import android.app.Application
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
- * Mantiene una unica conexion SPP compartida entre Inicio y Lectura (y cualquier
- * otra pantalla). Antes cada fragment creaba su propio BtManager: conectar el
- * lector desde Inicio no servia en Lectura porque era un socket distinto que
- * nunca llegaba a conectarse, y por eso no se agregaban las caravanas leidas
- * por Bluetooth SPP.
+ * Acceso de las pantallas a la unica conexion con el lector, compartida entre
+ * Inicio, Lectura y cualquier otra pantalla (ver [BtConexion]). Antes cada
+ * fragment creaba su propio BtManager: conectar el lector desde Inicio no
+ * servia en Lectura porque era un socket distinto que nunca llegaba a
+ * conectarse, y por eso no se agregaban las caravanas leidas por Bluetooth.
  */
 class BtConnectionViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -24,54 +21,22 @@ class BtConnectionViewModel(app: Application) : AndroidViewModel(app) {
         data class Error(val msg: String) : Estado()
     }
 
-    private val adapter = app.getSystemService(BluetoothManager::class.java)?.adapter
-    private val btManager = BtManager(adapter, app)
+    // La conexión vive en BtConexion (y la sostiene BtService), no acá: este
+    // ViewModel muere con la Activity y antes cortaba el lector al cerrar la app.
+    val estado: LiveData<Estado> = BtConexion.estado
+    val hayLineas: LiveData<Unit> = BtConexion.hayLineas
 
-    private val _estado = MutableLiveData<Estado>(Estado.Desconectado)
-    val estado: LiveData<Estado> = _estado
+    private val app: Application get() = getApplication()
 
-    // Cola en vez de un valor unico: onLine puede llegar mas rapido de lo que
-    // la pantalla activa procesa, y una LiveData simple perderia lecturas.
-    private val pendientes = ConcurrentLinkedQueue<String>()
-    private val _hayLineas = MutableLiveData<Unit>()
-    val hayLineas: LiveData<Unit> = _hayLineas
+    fun pairedDevices(): List<BluetoothDevice> = BtConexion.pairedDevices(app)
 
-    init {
-        btManager.listener = object : BtManager.Listener {
-            override fun onConnected(deviceName: String) { _estado.value = Estado.Conectado(deviceName) }
-            override fun onLine(line: String) {
-                pendientes.add(line)
-                _hayLineas.value = Unit
-            }
-            override fun onDisconnected() { _estado.value = Estado.Desconectado }
-            override fun onError(msg: String) { _estado.value = Estado.Error(msg) }
-        }
-    }
+    fun conectar(device: BluetoothDevice) = BtConexion.conectar(app, device)
 
-    fun pairedDevices(): List<BluetoothDevice> = btManager.pairedDevices()
-
-    fun conectar(device: BluetoothDevice) {
-        _estado.value = Estado.Conectando(device.name ?: device.address)
-        btManager.connect(device)
-    }
-
-    fun isConnected(): Boolean = btManager.isConnected
+    fun isConnected(): Boolean = BtConexion.isConnected(app)
 
     /** Suelta la conexión de lectura en vivo (ej. para que otra pantalla use el lector). */
-    fun desconectar() {
-        btManager.disconnect()
-        _estado.value = Estado.Desconectado
-    }
+    fun desconectar() = BtConexion.desconectar(app)
 
     /** Vacía y devuelve todas las líneas acumuladas desde el último drenaje. */
-    fun drenarLineas(): List<String> {
-        val out = mutableListOf<String>()
-        while (true) out.add(pendientes.poll() ?: break)
-        return out
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        btManager.disconnect()
-    }
+    fun drenarLineas(): List<String> = BtConexion.drenarLineas()
 }

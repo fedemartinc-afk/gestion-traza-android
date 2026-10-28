@@ -48,6 +48,8 @@ class HomeFragment : Fragment() {
         else showToast("Permiso Bluetooth requerido")
     }
 
+    private val notifLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, saved: Bundle?): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
@@ -86,7 +88,7 @@ class HomeFragment : Fragment() {
             when (estado) {
                 is BtConnectionViewModel.Estado.Conectado -> {
                     binding.dotBt.setBackgroundResource(R.drawable.circle_green)
-                    binding.tvBtEstado.text = "SPP conectado: ${estado.deviceName}"
+                    binding.tvBtEstado.text = "Lector conectado: ${estado.deviceName}"
                 }
                 is BtConnectionViewModel.Estado.Conectando -> {
                     binding.dotBt.setBackgroundResource(R.drawable.circle_gray)
@@ -101,9 +103,14 @@ class HomeFragment : Fragment() {
                     binding.tvBtEstado.text = "Bluetooth — sin lector conectado"
                 }
             }
+            // También con "Conectando": permite cancelar un intento que se demora.
+            val hayConexion = estado is BtConnectionViewModel.Estado.Conectado ||
+                estado is BtConnectionViewModel.Estado.Conectando
+            binding.btnBtDesconectar.visibility = if (hayConexion) View.VISIBLE else View.GONE
         }
 
         binding.btnBtConectar.setOnClickListener { requestBtAndConnect() }
+        binding.btnBtDesconectar.setOnClickListener { btVm.desconectar() }
 
         binding.btnLeerCaravanas.setOnClickListener {
             findNavController().navigate(R.id.action_home_to_reading)
@@ -370,9 +377,22 @@ class HomeFragment : Fragment() {
         val names = devices.map { it.name ?: it.address }.toTypedArray()
         AlertDialog.Builder(requireContext())
             .setTitle("Seleccionar lector SPP")
-            .setItems(names) { _, idx -> btVm.conectar(devices[idx]) }
+            .setItems(names) { _, idx ->
+                pedirPermisoNotificacion()
+                btVm.conectar(devices[idx])
+            }
             .setNegativeButton("Cancelar", null)
             .show()
+    }
+
+    // Sin este permiso (Android 13+) el lector igual se conecta y se mantiene, pero
+    // el aviso "Lector conectado" y su botón Desconectar no se ven en la barra.
+    private fun pedirPermisoNotificacion() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val permiso = Manifest.permission.POST_NOTIFICATIONS
+        if (ContextCompat.checkSelfPermission(requireContext(), permiso) != PackageManager.PERMISSION_GRANTED) {
+            notifLauncher.launch(permiso)
+        }
     }
 
     private fun showToast(msg: String) {

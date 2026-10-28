@@ -14,6 +14,9 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -27,6 +30,9 @@ import kotlin.coroutines.resumeWithException
 // UUID estándar Bluetooth SPP (Serial Port Profile)
 private val SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
 private val CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+// Un lector dormido puede tardar ~14 s solo en responder al llamado (medido con
+// el Tru-Test XRS2), así que el corte tiene que quedar bien por encima de eso.
+private const val LIMITE_INTENTO_SPP_MS = 30_000L
 
 private data class PerfilBle(val nombre: String, val servicio: UUID, val caracteristica: UUID)
 
@@ -41,6 +47,13 @@ private val PERFILES_BLE = listOf(
         "Gallagher Tagging",
         UUID.fromString("f9c5aa00-e843-4ab3-b7ec-bf840ac14980"),
         UUID.fromString("f9c5aa01-e843-4ab3-b7ec-bf840ac14980")
+    ),
+    // Lector SYNO-3-SPP (confirmado con hardware real): mismo servicio ffe0 pero
+    // la característica que notifica es ffe4; ffe1 solo permite leer/escribir.
+    PerfilBle(
+        "SYNO (ffe0/ffe4)",
+        UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"),
+        UUID.fromString("0000ffe4-0000-1000-8000-00805f9b34fb")
     ),
     // Gallagher "RealTraceTagging" (misma app) — usa el UUID genérico CC254X,
     // un chip BLE-serie muy común en varios fabricantes.
@@ -58,6 +71,13 @@ private val PERFILES_BLE = listOf(
     ),
 )
 
+// Servicios genéricos de cualquier dispositivo BLE (acceso, atributos, info del
+// fabricante, batería): nunca llevan caravanas.
+private fun esServicioEstandar(uuid: UUID): Boolean {
+    val s = uuid.toString().lowercase()
+    return s.endsWith("-0000-1000-8000-00805f9b34fb") && s.substring(4, 8) in setOf("1800", "1801", "180a", "180f")
+}
+
 @SuppressLint("MissingPermission")
 class BtManager(private val adapter: BluetoothAdapter?, private val context: Context) {
 
@@ -71,6 +91,8 @@ class BtManager(private val adapter: BluetoothAdapter?, private val context: Con
     private var socket: BluetoothSocket? = null
     private var gatt: BluetoothGatt? = null
     private var readJob: Job? = null
+    private var connectJob: Job? = null
+    private val prefsVariantes by lazy { context.getSharedPreferences("bt_variantes", Context.MODE_PRIVATE) }
     var listener: Listener? = null
 
     val isConnected: Boolean get() = socket?.isConnected == true || gatt != null
@@ -80,46 +102,90 @@ class BtManager(private val adapter: BluetoothAdapter?, private val context: Con
 
     fun connect(device: BluetoothDevice) {
         disconnect()
-        CoroutineScope(Dispatchers.IO).launch {
+        // disconnect() cancela el intento anterior: dos conexiones simultáneas al
+        // mismo lector se estorban entre sí y alargan la espera.
+        connectJob = CoroutineScope(Dispatchers.IO).launch {
             adapter?.cancelDiscovery()
-            var ultimoError: Exception? = null
+            var errorSpp: Exception? = null
+            var errorBle: Exception? = null
+            val inicio = System.currentTimeMillis()
+            Log.i("BtManager", "conectando a ${device.name} (tipo ${device.type})")
             // Algunos lectores (ej. Gallagher) no completan bien el handshake del
             // socket "seguro" — se prueban variantes hasta encontrar una que ande.
-            for (intento in listOf("segura", "insegura", "canal1")) {
-                try {
-                    val sock = when (intento) {
-                        "segura"   -> device.createRfcommSocketToServiceRecord(SPP_UUID)
-                        "insegura" -> device.createInsecureRfcommSocketToServiceRecord(SPP_UUID)
-                        else       -> device.javaClass
-                            .getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
-                            .invoke(device, 1) as BluetoothSocket
+            suspend fun porSpp(): Boolean {
+                // La variante que funcionó la última vez con este lector va primero:
+                // en el Tru-Test solo conecta "canal1" y las otras esperan en vano.
+                val clave = "spp_${device.address}"
+                val ultima = prefsVariantes.getString(clave, null)
+                val variantes = listOf("segura", "insegura", "canal1")
+                val orden = if (ultima in variantes) listOf(ultima!!) + (variantes - ultima!!) else variantes
+                for (intento in orden) {
+                    currentCoroutineContext().ensureActive()
+                    var sock: BluetoothSocket? = null
+                    // connect() puede colgarse ~60 s si el lector no responde; una
+                    // conexión sana tarda segundos, así que se corta cerrando el socket.
+                    var vigilante: Job? = null
+                    try {
+                        val nuevo = when (intento) {
+                            "segura"   -> device.createRfcommSocketToServiceRecord(SPP_UUID)
+                            "insegura" -> device.createInsecureRfcommSocketToServiceRecord(SPP_UUID)
+                            else       -> device.javaClass
+                                .getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
+                                .invoke(device, 1) as BluetoothSocket
+                        }
+                        sock = nuevo
+                        vigilante = CoroutineScope(Dispatchers.IO).launch {
+                            delay(LIMITE_INTENTO_SPP_MS)
+                            runCatching { nuevo.close() }
+                        }
+                        nuevo.connect()
+                        vigilante.cancel()
+                        socket = nuevo
+                        prefsVariantes.edit().putString(clave, intento).apply()
+                        Log.i("BtManager", "conectado por SPP ($intento) en ${System.currentTimeMillis() - inicio} ms")
+                        withContext(Dispatchers.Main) { listener?.onConnected(device.name ?: "Lector") }
+                        startReading(nuevo)
+                        return true
+                    } catch (e: Exception) {
+                        vigilante?.cancel()
+                        Log.e("BtManager", "connect error ($intento) tras ${System.currentTimeMillis() - inicio} ms", e)
+                        errorSpp = e
+                        runCatching { sock?.close() }
+                        socket = null
                     }
-                    sock.connect()
-                    socket = sock
+                }
+                return false
+            }
+            // Lectores que solo tienen BLE (ej. Gallagher HR5 v3, SYNO-3-SPP).
+            suspend fun porBle(): Boolean {
+                currentCoroutineContext().ensureActive()
+                try {
+                    withTimeout(15000) { connectBle(device) }
+                    Log.i("BtManager", "conectado por BLE en ${System.currentTimeMillis() - inicio} ms")
                     withContext(Dispatchers.Main) { listener?.onConnected(device.name ?: "Lector") }
-                    startReading(sock)
-                    return@launch
+                    return true
                 } catch (e: Exception) {
-                    Log.e("BtManager", "connect error ($intento)", e)
-                    ultimoError = e
-                    runCatching { socket?.close() }
-                    socket = null
+                    Log.e("BtManager", "connect error (ble)", e)
+                    errorBle = e
+                    runCatching { gatt?.close() }
+                    gatt = null
+                    return false
                 }
             }
-            // Si ninguna variante de socket RFCOMM/SPP funcionó, puede ser un
-            // lector que solo tiene BLE (ej. Gallagher HR5 v3) — se intenta como
-            // último recurso.
-            try {
-                withTimeout(15000) { connectBle(device) }
-                withContext(Dispatchers.Main) { listener?.onConnected(device.name ?: "Lector") }
-                return@launch
-            } catch (e: Exception) {
-                Log.e("BtManager", "connect error (ble)", e)
-                ultimoError = e
-                runCatching { gatt?.close() }
-                gatt = null
+            // Cada intento SPP fallido tarda ~20 s: si Android informa que el
+            // dispositivo es solo-BLE se empieza por BLE. Si falla, se prueba el
+            // otro camino igual, para no perder lectores mal clasificados.
+            val conectado = if (device.type == BluetoothDevice.DEVICE_TYPE_LE) {
+                porBle() || porSpp()
+            } else {
+                porSpp() || porBle()
             }
-            withContext(Dispatchers.Main) { listener?.onError("No se pudo conectar: ${ultimoError?.message}") }
+            if (!conectado) {
+                // Se informa el error del camino que corresponde al lector, no el
+                // del último probado (un lector clásico no tiene nada que ver con BLE).
+                val causa = if (device.type == BluetoothDevice.DEVICE_TYPE_LE) errorBle ?: errorSpp else errorSpp ?: errorBle
+                withContext(Dispatchers.Main) { listener?.onError("No se pudo conectar: ${causa?.message}") }
+            }
         }
     }
 
@@ -149,6 +215,12 @@ class BtManager(private val adapter: BluetoothAdapter?, private val context: Con
      * SPP, para que el resto de la app no tenga que distinguir el origen.
      */
     private suspend fun connectBle(device: BluetoothDevice) {
+        val descriptoresPendientes = ArrayDeque<BluetoothGattDescriptor>()
+        fun escribirSiguienteDescriptor(g: BluetoothGatt) {
+            val d = descriptoresPendientes.removeFirstOrNull() ?: return
+            @Suppress("DEPRECATION")
+            g.writeDescriptor(d)
+        }
         suspendCancellableCoroutine<Unit> { cont ->
             val callback = object : BluetoothGattCallback() {
                 override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
@@ -176,32 +248,57 @@ class BtManager(private val adapter: BluetoothAdapter?, private val context: Con
                     for (perfil in PERFILES_BLE) {
                         val service = g.getService(perfil.servicio)
                         val c = service?.getCharacteristic(perfil.caracteristica)
-                        if (service != null && c != null) {
+                        val avisa = c != null && c.properties and (BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0
+                        if (service != null && c != null && avisa) {
                             chara = c
                             perfilUsado = perfil.nombre
                             break
                         }
                     }
-                    if (chara == null) {
+                    // Se deja en el log todo lo que ofrece el lector, para poder
+                    // agregarle un perfil propio si hace falta.
+                    val conNotificacion = mutableListOf<BluetoothGattCharacteristic>()
+                    for (s in g.services) {
+                        Log.i("BtManager", "BLE servicio ${s.uuid}")
+                        for (c in s.characteristics) {
+                            Log.i("BtManager", "BLE   característica ${c.uuid} propiedades 0x${Integer.toHexString(c.properties)}")
+                            val avisa = c.properties and (BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0
+                            if (avisa && !esServicioEstandar(s.uuid)) conNotificacion += c
+                        }
+                    }
+                    // Sin perfil conocido se escuchan todas las características que
+                    // avisan datos (fuera de los servicios genéricos del sistema).
+                    val aSuscribir = if (chara != null) listOf(chara) else conNotificacion
+                    if (aSuscribir.isEmpty()) {
                         cont.resumeWithException(Exception("El dispositivo no tiene ninguno de los servicios BLE conocidos"))
                         return
                     }
-                    Log.i("BtManager", "BLE conectado usando perfil: $perfilUsado")
-                    g.setCharacteristicNotification(chara, true)
-                    val cccd = chara.getDescriptor(CCCD_UUID)
-                    if (cccd != null) {
+                    Log.i("BtManager", "BLE conectado usando perfil: ${perfilUsado ?: "genérico (${aSuscribir.size} características)"}")
+                    for (c in aSuscribir) {
+                        g.setCharacteristicNotification(c, true)
+                        val cccd = c.getDescriptor(CCCD_UUID) ?: continue
+                        val soloIndica = c.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY == 0
                         @Suppress("DEPRECATION")
-                        cccd.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                        @Suppress("DEPRECATION")
-                        g.writeDescriptor(cccd)
+                        cccd.value = if (soloIndica) BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
+                                     else BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                        descriptoresPendientes.addLast(cccd)
                     }
+                    escribirSiguienteDescriptor(g)
                     gatt = g
                     cont.resume(Unit)
                 }
 
+                // Android admite una sola operación GATT a la vez: los descriptores
+                // se escriben de a uno, esperando la confirmación de cada uno.
+                override fun onDescriptorWrite(g: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
+                    escribirSiguienteDescriptor(g)
+                }
+
                 @Suppress("DEPRECATION")
                 override fun onCharacteristicChanged(g: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-                    val texto = characteristic.value?.toString(Charsets.UTF_8)?.trim() ?: return
+                    val bytes = characteristic.value ?: return
+                    Log.i("BtManager", "BLE dato de ${characteristic.uuid}: ${bytes.joinToString(" ") { "%02x".format(it) }}")
+                    val texto = bytes.toString(Charsets.UTF_8).trim()
                     if (texto.isNotEmpty()) {
                         CoroutineScope(Dispatchers.Main).launch { listener?.onLine(texto) }
                     }
@@ -213,6 +310,7 @@ class BtManager(private val adapter: BluetoothAdapter?, private val context: Con
     }
 
     fun disconnect() {
+        connectJob?.cancel()
         readJob?.cancel()
         runCatching { socket?.close() }
         socket = null

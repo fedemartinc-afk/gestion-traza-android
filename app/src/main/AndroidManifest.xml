@@ -14,6 +14,10 @@
     <!-- Internet y Cámara -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Mantener el lector conectado con la app cerrada (servicio en primer plano) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Instalar la actualización descargada desde GitHub -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
@@ -45,6 +49,11 @@
             android:name=".ui.send.BarcodeScanActivity"
             android:exported="false"
             android:screenOrientation="portrait"/>
+
+        <service
+            android:name=".bluetooth.BtService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice"/>
 
         <provider
             android:name="androidx.core.content.FileProvider"
