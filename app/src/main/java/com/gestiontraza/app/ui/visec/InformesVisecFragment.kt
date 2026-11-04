@@ -95,6 +95,19 @@ class InformesVisecFragment : Fragment() {
             if (negrita) setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
 
+    /** La leyenda del resultado con lo válido / habilitado en verde y lo inválido / inhabilitado en rojo (con su número). */
+    private fun resaltarResultado(t: String): CharSequence {
+        val sp = android.text.SpannableString(t)
+        val verde = Color.parseColor("#2e7d32"); val rojo = Color.parseColor("#c62828")
+        val patron = Regex("(\\d+\\s+)?(caravanas?(\\(s\\))?\\s+)?(in)?(v[aá]lid|habilitad)\\w*(\\(s\\))?", RegexOption.IGNORE_CASE)
+        for (m in patron.findAll(t)) {
+            val roja = m.value.contains("inv", true) || m.value.contains("inhab", true)
+            sp.setSpan(android.text.style.ForegroundColorSpan(if (roja) rojo else verde), m.range.first, m.range.last + 1, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            sp.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), m.range.first, m.range.last + 1, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        return sp
+    }
+
     private fun tarjeta(x: JSONObject): View {
         val ctx = requireContext()
         val estado = x.optString("estado")
@@ -112,8 +125,7 @@ class InformesVisecFragment : Fragment() {
         when (estado) {
             "finalizado" -> {
                 caja.addView(texto("Finalizado ${x.optString("finalizado")}", 12f, verde, true).apply { setPadding(0, dp(6), 0, 0) })
-                caja.addView(texto(resumenResultadoVisec(x), 14f, if (x.optBoolean("todas_validas")) verde else if (x.optInt("inhabilitadas") > 0 || x.optString("lote_texto").contains("inválid", true)) rojo else Color.parseColor("#1e293b"), negrita = true)
-                    .apply { setPadding(0, dp(4), 0, 0) })
+                caja.addView(texto("", 14f).apply { text = resaltarResultado(resumenResultadoVisec(x)); setPadding(0, dp(4), 0, 0) })
             }
             "error" -> {
                 caja.addView(texto("Con error", 12f, rojo, true).apply { setPadding(0, dp(6), 0, 0) })
