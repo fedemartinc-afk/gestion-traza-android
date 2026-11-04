@@ -33,6 +33,8 @@ import com.gestiontraza.app.data.SessionFileStore
 import com.gestiontraza.app.databinding.DialogDteUnicoBinding
 import com.gestiontraza.app.databinding.FragmentSendBinding
 import com.gestiontraza.app.ui.importar.guardarSesionImportada
+import com.gestiontraza.app.ui.visec.enviarAVisec
+import com.gestiontraza.app.ui.visec.mostrarSiVisecHabilitado
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -107,6 +109,11 @@ class SendFragment : Fragment() {
 
         binding.btnUbicacionActual.setOnClickListener {
             findNavController().navigate(SendFragmentDirections.actionSendToUbicacionActual(caravanasJson))
+        }
+        // Verificar en VISEC (módulo VISEC): solo se ve si el usuario lo tiene habilitado.
+        mostrarSiVisecHabilitado(session, binding.btnEnviarVisec)
+        binding.btnEnviarVisec.setOnClickListener {
+            enviarAVisec(session, lineas, "", "Lectura " + java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale.US).format(java.util.Date()))
         }
         // Vuelve al inicio para empezar una nueva lectura de caravanas.
         binding.btnLeerCaravanas.setOnClickListener {

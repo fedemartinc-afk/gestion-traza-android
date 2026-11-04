@@ -224,6 +224,37 @@
             style="@style/BtnSecondary"
             android:layout_marginTop="12dp"/>
 
+        <FrameLayout
+            android:id="@+id/frameInformesVisec"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnInformesVisec"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="🔎  Informes VISEC"
+                android:textSize="14sp"
+                style="@style/BtnSecondary"/>
+
+            <TextView
+                android:id="@+id/tvBadgeInformesVisec"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="6dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/badge_red"
+                android:textColor="@color/blanco"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:visibility="gone"
+                android:text="0"/>
+        </FrameLayout>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -312,6 +343,37 @@
                 android:text="📥  Ver / importar sesiones"
                 android:textSize="14sp"
                 style="@style/BtnSecondary"/>
+
+            <FrameLayout
+                android:id="@+id/frameInformesVisecProductor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnInformesVisecProductor"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="🔎  Informes VISEC"
+                    android:textSize="14sp"
+                    style="@style/BtnSecondary"/>
+
+                <TextView
+                    android:id="@+id/tvBadgeInformesVisecProductor"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/badge_red"
+                    android:textColor="@color/blanco"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:visibility="gone"
+                    android:text="0"/>
+            </FrameLayout>
 
         </LinearLayout>
     </ScrollView>

@@ -267,6 +267,17 @@
                 android:gravity="center"
                 android:layout_marginBottom="16dp"/>
 
+            <!-- Solo si el usuario tiene habilitado el módulo Verificar en VISEC -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEnviarVisec"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="🔎  Verificar en VISEC"
+                android:textSize="15sp"
+                android:visibility="gone"
+                style="@style/BtnPrimary"
+                android:layout_marginBottom="8dp"/>
+
             <!-- Vuelve al inicio para empezar una nueva lectura -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLeerCaravanas"

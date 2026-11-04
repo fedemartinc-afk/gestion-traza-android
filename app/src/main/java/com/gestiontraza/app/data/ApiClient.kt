@@ -20,6 +20,82 @@ object ApiClient {
 
     data class Result(val ok: Boolean, val message: String, val data: JSONObject? = null)
 
+    /** ¿Tiene el usuario el módulo Verificar en VISEC? La web responde habilitado, cuenta cargada, conexión y largo máximo del nombre. */
+    fun estadoVisec(baseUrl: String, token: String): Result {
+        return try {
+            val req = Request.Builder()
+                .url("$baseUrl/api/android/visec/estado")
+                .addHeader("Authorization", "Bearer $token")
+                .get().build()
+            val resp = client.newCall(req).execute()
+            val body = resp.body?.string() ?: ""
+            val json = runCatching { JSONObject(body) }.getOrNull()
+            if (resp.isSuccessful) Result(true, "", json)
+            else Result(false, json?.optString("error")?.ifBlank { null } ?: "Error ${resp.code}", json)
+        } catch (e: Exception) {
+            Result(false, "Sin conexión: ${e.message}")
+        }
+    }
+
+    /** Deja en cola de la web una verificación en VISEC (se ejecuta en segundo plano). [dte] va dentro de la descripción. */
+    fun solicitarVisec(baseUrl: String, token: String, nombre: String, dte: String, caravanas: List<String>): Result {
+        return try {
+            val cuerpo = JSONObject().put("nombre", nombre).put("caravanas", JSONArray(caravanas))
+            if (dte.isNotBlank()) cuerpo.put("dte", dte)
+            val req = Request.Builder()
+                .url("$baseUrl/api/android/visec/solicitar")
+                .addHeader("Authorization", "Bearer $token")
+                .post(cuerpo.toString().toRequestBody(JSON))
+                .build()
+            val resp = client.newCall(req).execute()
+            val body = resp.body?.string() ?: ""
+            val json = runCatching { JSONObject(body) }.getOrNull()
+            if (resp.isSuccessful) Result(true, json?.optString("mensaje").orEmpty(), json)
+            else Result(false, json?.optString("error")?.ifBlank { null } ?: "Error ${resp.code}", json)
+        } catch (e: Exception) {
+            Result(false, "Sin conexión: ${e.message}")
+        }
+    }
+
+    /** Informes de VISEC enviados desde la app, con su resultado. Con [ids], solo esos (para avisar cuando terminan). */
+    fun informesVisec(baseUrl: String, token: String, ids: Collection<Long> = emptyList()): Result {
+        return try {
+            val q = if (ids.isEmpty()) "" else "?ids=" + ids.joinToString(",")
+            val req = Request.Builder()
+                .url("$baseUrl/api/android/visec/informes$q")
+                .addHeader("Authorization", "Bearer $token")
+                .get().build()
+            val resp = client.newCall(req).execute()
+            val body = resp.body?.string() ?: ""
+            val json = runCatching { JSONObject(body) }.getOrNull()
+            if (resp.isSuccessful) Result(true, "", json)
+            else Result(false, json?.optString("error")?.ifBlank { null } ?: "Error ${resp.code}", json)
+        } catch (e: Exception) {
+            Result(false, "Sin conexión: ${e.message}")
+        }
+    }
+
+    /** El Excel de un informe de VISEC: [ok] con [nombre] y [bytes], o un [mensaje] de error. */
+    class ExcelVisec(val ok: Boolean, val mensaje: String, val nombre: String = "", val bytes: ByteArray? = null)
+
+    fun excelVisec(baseUrl: String, token: String, id: Long): ExcelVisec {
+        return try {
+            val req = Request.Builder()
+                .url("$baseUrl/api/android/visec/informes/$id/excel")
+                .addHeader("Authorization", "Bearer $token")
+                .get().build()
+            val resp = client.newCall(req).execute()
+            if (!resp.isSuccessful) {
+                val json = runCatching { JSONObject(resp.body?.string() ?: "") }.getOrNull()
+                return ExcelVisec(false, json?.optString("error")?.ifBlank { null } ?: "Error ${resp.code}")
+            }
+            val nombre = Regex("filename=\"?([^\";]+)").find(resp.header("Content-Disposition") ?: "")?.groupValues?.get(1) ?: "informe_visec.xlsx"
+            ExcelVisec(true, "", nombre, resp.body?.bytes())
+        } catch (e: Exception) {
+            ExcelVisec(false, "Sin conexión: ${e.message}")
+        }
+    }
+
     fun verificarSesion(baseUrl: String, token: String): Result {
         return try {
             val req = Request.Builder()

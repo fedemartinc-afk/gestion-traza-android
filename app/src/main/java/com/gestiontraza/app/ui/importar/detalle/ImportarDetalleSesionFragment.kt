@@ -9,6 +9,9 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.gestiontraza.app.data.SessionFileStore
+import com.gestiontraza.app.data.SessionManager
+import com.gestiontraza.app.ui.visec.enviarAVisec
+import com.gestiontraza.app.ui.visec.mostrarSiVisecHabilitado
 import com.gestiontraza.app.databinding.FragmentImportarDetalleSesionBinding
 import com.gestiontraza.app.ui.importar.compartirSesion
 import com.gestiontraza.app.ui.reading.ReadingViewModel
@@ -63,6 +66,16 @@ class ImportarDetalleSesionFragment : Fragment() {
             findNavController().navigate(
                 ImportarDetalleSesionFragmentDirections.actionImportarDetalleToHub(json)
             )
+        }
+
+        // Verificar en VISEC (módulo VISEC): solo se ve si el usuario lo tiene habilitado.
+        val session = SessionManager(requireContext())
+        mostrarSiVisecHabilitado(session, binding.btnEnviarVisec)
+        binding.btnEnviarVisec.setOnClickListener {
+            val vm = ReadingViewModel()
+            vm.addLineas(contenido)
+            // Va el nombre de la sesión tal cual (se puede cambiar antes de enviar).
+            enviarAVisec(session, vm.validas(), "", sesion.nombre)
         }
 
         binding.btnEliminar.setOnClickListener {

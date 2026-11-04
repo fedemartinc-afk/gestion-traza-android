@@ -19,7 +19,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.gestiontraza.app.R
 import com.gestiontraza.app.bluetooth.BtConnectionViewModel
@@ -30,7 +32,10 @@ import com.gestiontraza.app.data.ApkDownloader
 import com.gestiontraza.app.data.PendingQueue
 import com.gestiontraza.app.data.SessionManager
 import com.gestiontraza.app.databinding.FragmentHomeBinding
+import com.gestiontraza.app.ui.visec.VisecAviso
+import com.gestiontraza.app.ui.visec.mostrarSiVisecHabilitado
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -133,6 +138,23 @@ class HomeFragment : Fragment() {
 
         binding.btnImportarSesiones.setOnClickListener {
             findNavController().navigate(R.id.action_home_to_importar)
+        }
+
+        // Informes VISEC (módulo VISEC): solo se ven si el usuario lo tiene habilitado. Si quedaron envíos esperando su aviso, se retoma.
+        mostrarSiVisecHabilitado(session, binding.frameInformesVisec)
+        mostrarSiVisecHabilitado(session, binding.frameInformesVisecProductor)
+        binding.btnInformesVisec.setOnClickListener { findNavController().navigate(R.id.action_home_to_informes_visec) }
+        binding.btnInformesVisecProductor.setOnClickListener { findNavController().navigate(R.id.action_home_to_informes_visec) }
+        VisecAviso.reprogramarSiHayPendientes(requireContext().applicationContext)
+        // Con Inicio a la vista, cada 20 segundos se revisan los envíos que esperan (aviso) y se actualiza el número rojo
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    delay(20_000)
+                    if (VisecAviso.pendientes(requireContext()).isNotEmpty()) VisecAviso.revisar(requireContext().applicationContext)
+                    actualizarBadgeInformes()
+                }
+            }
         }
 
         setupModulosProductor()
@@ -258,6 +280,19 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         actualizarBadgePendientes()
+        actualizarBadgeInformes()
+    }
+
+    /** Número rojo en "Informes VISEC": los informes terminados que todavía no se vieron en la lista de la app. */
+    private fun actualizarBadgeInformes() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val n = com.gestiontraza.app.ui.visec.VisecAviso.contarNoVistos(requireContext().applicationContext, session) ?: return@launch
+            if (_binding == null) return@launch
+            for (tv in listOf(binding.tvBadgeInformesVisec, binding.tvBadgeInformesVisecProductor)) {
+                tv.text = if (n > 9) "9+" else n.toString()
+                tv.visibility = if (n > 0) View.VISIBLE else View.GONE
+            }
+        }
     }
 
     private fun actualizarBadgePendientes() {

@@ -26,6 +26,8 @@ import com.gestiontraza.app.data.FormatoCaravana
 import com.gestiontraza.app.databinding.DialogDteUnicoBinding
 import com.gestiontraza.app.databinding.FragmentHubBinding
 import com.gestiontraza.app.ui.importar.guardarSesionImportada
+import com.gestiontraza.app.ui.visec.enviarAVisec
+import com.gestiontraza.app.ui.visec.mostrarSiVisecHabilitado
 import com.gestiontraza.app.ui.send.BarcodeScanActivity
 import com.gestiontraza.app.ui.send.configurarTecladoDte
 import com.gestiontraza.app.ui.send.confirmarEnvioSinVerificar
@@ -118,6 +120,11 @@ class HubFragment : Fragment() {
         }
         binding.btnEnviarWebSinVerificar.setOnClickListener { enviarSinVerificar() }
         binding.btnEnviarCierre.setOnClickListener { pedirDteCierre() }
+        // Verificar en VISEC (módulo VISEC): solo se ve si el usuario lo tiene habilitado.
+        mostrarSiVisecHabilitado(session, binding.btnEnviarVisec)
+        binding.btnEnviarVisec.setOnClickListener {
+            enviarAVisec(session, lineas, "", "Lectura " + java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale.US).format(java.util.Date()))
+        }
         // Vuelve al inicio para empezar una nueva lectura de caravanas.
         binding.btnLeerCaravanas.setOnClickListener {
             findNavController().navigate(R.id.action_hub_to_home)

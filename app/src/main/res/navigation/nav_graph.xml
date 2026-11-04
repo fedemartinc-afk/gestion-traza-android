@@ -76,6 +76,9 @@
         <action
             android:id="@+id/action_home_to_importar"
             app:destination="@id/importarHomeFragment"/>
+        <action
+            android:id="@+id/action_home_to_informes_visec"
+            app:destination="@id/informesVisecFragment"/>
     </fragment>
 
     <!-- Lectura de caravanas: común a ambos perfiles.
@@ -313,6 +316,12 @@
             android:id="@+id/action_importarConectar_to_sesiones"
             app:destination="@id/importarSesionesFragment"/>
     </fragment>
+
+    <!-- Informes de VISEC enviados desde la app (solo con el módulo VISEC) -->
+    <fragment
+        android:id="@+id/informesVisecFragment"
+        android:name="com.gestiontraza.app.ui.visec.InformesVisecFragment"
+        android:label="Informes VISEC"/>
 
     <fragment
         android:id="@+id/importarSesionesFragment"
