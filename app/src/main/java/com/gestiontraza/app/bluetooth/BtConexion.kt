@@ -47,9 +47,42 @@ object BtConexion {
     fun isConnected(app: Application): Boolean = manager(app).isConnected
 
     fun conectar(app: Application, device: BluetoothDevice) {
+        guardarUltimo(app, device)
         _estado.value = BtConnectionViewModel.Estado.Conectando(device.name ?: device.address)
         BtService.iniciar(app)
         manager(app).connect(device)
+    }
+
+    // ---- Último lector: se recuerda para volver a conectarlo solo al abrir la app ----
+    private const val PREFS_ULTIMO = "bt_ultimo_lector"
+
+    private fun guardarUltimo(app: Application, device: BluetoothDevice) {
+        app.getSharedPreferences(PREFS_ULTIMO, android.content.Context.MODE_PRIVATE).edit()
+            .putString("direccion", device.address).putString("nombre", device.name ?: device.address).putBoolean("auto", true).apply()
+    }
+
+    /** El lector se desconectó a propósito: no se vuelve a conectar solo hasta que se lo elija otra vez. */
+    fun desconectarManual(app: Application) {
+        app.getSharedPreferences(PREFS_ULTIMO, android.content.Context.MODE_PRIVATE).edit().putBoolean("auto", false).apply()
+        desconectar(app)
+    }
+
+    /**
+     * Si no hay un lector conectado ni conectándose y quedó recordado el último (y sigue vinculado en Android), lo conecta.
+     * Devuelve su nombre si arrancó la conexión. El vínculo lo guarda Android: sobrevive a las actualizaciones de la app.
+     */
+    @android.annotation.SuppressLint("MissingPermission")
+    fun reconectarUltimo(app: Application): String? {
+        val estadoActual = _estado.value
+        if (estadoActual !is BtConnectionViewModel.Estado.Desconectado) return null
+        val prefs = app.getSharedPreferences(PREFS_ULTIMO, android.content.Context.MODE_PRIVATE)
+        val direccion = prefs.getString("direccion", null) ?: return null
+        if (!prefs.getBoolean("auto", true)) return null
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
+            androidx.core.content.ContextCompat.checkSelfPermission(app, android.Manifest.permission.BLUETOOTH_CONNECT) != android.content.pm.PackageManager.PERMISSION_GRANTED) return null
+        val device = try { pairedDevices(app).firstOrNull { it.address == direccion } } catch (e: SecurityException) { null } ?: return null
+        conectar(app, device)
+        return device.name ?: device.address
     }
 
     fun desconectar(app: Application) {

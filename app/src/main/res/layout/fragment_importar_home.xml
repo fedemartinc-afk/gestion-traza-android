@@ -139,6 +139,15 @@
                     android:textColor="@color/gris_texto"
                     android:layout_marginTop="6dp"/>
 
+                <!-- Volver a la pantalla principal -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnVolverInicio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="🏠  Volver al inicio"
+                    style="@style/BtnSecondary"/>
+
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 

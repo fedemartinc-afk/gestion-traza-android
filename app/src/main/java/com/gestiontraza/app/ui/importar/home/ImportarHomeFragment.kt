@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.gestiontraza.app.R
 import com.gestiontraza.app.data.ReaderTips
 import com.gestiontraza.app.data.CaravanaSexo
 import com.gestiontraza.app.data.SessionFileStore
@@ -44,6 +45,11 @@ class ImportarHomeFragment : Fragment() {
         super.onViewCreated(view, saved)
 
         binding.btnBack.setOnClickListener { findNavController().navigateUp() }
+
+        binding.btnVolverInicio.setOnClickListener {
+            val nav = findNavController()
+            if (!nav.popBackStack(R.id.homeFragment, false)) nav.navigate(R.id.homeFragment)
+        }
 
         binding.btnConectarBt.setOnClickListener {
             findNavController().navigate(ImportarHomeFragmentDirections.actionImportarHomeToConectar())

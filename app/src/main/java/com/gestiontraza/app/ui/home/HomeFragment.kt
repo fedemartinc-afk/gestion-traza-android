@@ -24,6 +24,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.gestiontraza.app.R
+import com.gestiontraza.app.bluetooth.BtConexion
 import com.gestiontraza.app.bluetooth.BtConnectionViewModel
 import com.gestiontraza.app.data.ActualizacionChecker
 import com.gestiontraza.app.data.ActualizacionInfo
@@ -115,7 +116,9 @@ class HomeFragment : Fragment() {
         }
 
         binding.btnBtConectar.setOnClickListener { requestBtAndConnect() }
-        binding.btnBtDesconectar.setOnClickListener { btVm.desconectar() }
+        binding.btnBtDesconectar.setOnClickListener { btVm.desconectarManual() }
+        // Al abrir la app se vuelve a conectar solo el último lector (el vínculo con el teléfono sigue de antes)
+        BtConexion.reconectarUltimo(requireActivity().application)?.let { showToast("Conectando con $it…") }
 
         binding.btnLeerCaravanas.setOnClickListener {
             findNavController().navigate(R.id.action_home_to_reading)
@@ -399,7 +402,7 @@ class HomeFragment : Fragment() {
         if (devices.isEmpty()) {
             AlertDialog.Builder(requireContext())
                 .setTitle("Sin dispositivos")
-                .setMessage("Vinculá el lector RFID en Ajustes → Bluetooth y volvé a intentar.\n\nSi tu lector funciona en modo HID (teclado), no necesitás conectarlo aquí.")
+                .setMessage("Vinculá el lector RFID en Ajustes → Bluetooth y volvé a intentar.\n\nSi ya lo habías vinculado, revisá que la app tenga el permiso \"Dispositivos cercanos\" (Ajustes → Aplicaciones → esta app → Permisos).\n\nSi tu lector funciona en modo HID (teclado), no necesitás conectarlo aquí.")
                 .setPositiveButton("OK", null)
                 .show()
             return

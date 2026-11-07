@@ -34,6 +34,9 @@ class BtConnectionViewModel(app: Application) : AndroidViewModel(app) {
 
     fun isConnected(): Boolean = BtConexion.isConnected(app)
 
+    /** El usuario desconectó el lector a propósito: no se vuelve a conectar solo. */
+    fun desconectarManual() = BtConexion.desconectarManual(app)
+
     /** Suelta la conexión de lectura en vivo (ej. para que otra pantalla use el lector). */
     fun desconectar() = BtConexion.desconectar(app)
 

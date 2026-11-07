@@ -42,7 +42,7 @@ class BtService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACCION_DESCONECTAR) {
-            BtConexion.desconectar(application)
+            BtConexion.desconectarManual(application)
             return START_NOT_STICKY
         }
         // Android exige llamar a startForeground enseguida después de arrancar.
